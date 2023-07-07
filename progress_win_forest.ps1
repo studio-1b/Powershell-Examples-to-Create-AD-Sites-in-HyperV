@@ -1,3 +1,18 @@
+$arglen=$($args.length)
+if($arglen -lt 4) {
+    Write-Host "Use same arguments as 'create_win_forest.ps1' to see online progress of the script"
+   #Write-Host "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789|123456789 123456789 123456789"
+    Write-Host "                               Prefix    Gateway/subnet      other site subnets                      			Domain"
+    Write-Host "                               ------    --------------      ---------------                       				------"
+    Write-Host "if you are running..."
+    Write-Host "Running: ./create_win_forest.ps1 JMBC-Van  192.168.200.254/24  JMBC-Tor=192.168.150.0/24,JMBC-Mon=192.168.100.0/24,JMBC-Cal=192.168.50.0/24  JoMaBoCh"
+    Write-Host "then run to see progress..."
+    Write-Host "Usage:   ./progress_win_forest.ps1 JMBC-Van  192.168.200.254/24  JMBC-Tor=192.168.150.0/24,JMBC-Mon=192.168.100.0/24,JMBC-Cal=192.168.50.0/24  JoMaBoCh"
+
+    exit 1
+}
+
+
 function Create-Credential {
     param (
         $Resource,
@@ -257,10 +272,11 @@ $domaincred= Create-Credential -Resource $domain -Username "Administrator" -Plai
 $Dc2IP=MergeUsingOr-Network-Addresses -ip1 $lannetwork -ip2 0.0.0.2
 
 
-
+cls
 $Time = [System.Diagnostics.Stopwatch]::StartNew()
 while ($true) {
-    cls
+    [System.Console]::SetCursorPosition(0, 0)
+
     $CurrentTime = $Time.Elapsed
     write-host $([string]::Format("`rTime: {0:d2}:{1:d2}:{2:d2}",
                                   $CurrentTime.hours,
@@ -269,25 +285,6 @@ while ($true) {
     write-host ""
     Test-Installation -FullyQualifiedDomainName $domainca
     write-host ""
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
     write-host "##################################"
 
     Start-Sleep -Seconds 5
@@ -299,8 +296,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUS+tL53Xc7Tf5clEPqWADAAhp
-# TpigghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPOPPnEEBmrh4r/WSjMAEeNob
+# AAOgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -421,28 +418,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSfa4+j2TTSQXImSmqV5FWN
-# 4msmgjANBgkqhkiG9w0BAQEFAASCAQCkEaTRyq5XSeHzdqNTrWrGw+iuzO6SLf6Z
-# aczSXYfxxdKwi810Pccbd04lwg9JHRzQvOXOnuQcnwrMzorfPLeFCEh6cSUK7Qgf
-# /jMliSrKSRUDMakA1aUMIE1Yha8ANpIxw6fr3TTZc5RMmH+gRhyQiFoAKv3/UAFp
-# jrAMM7FgM6mv36l1H6FgjzVMIEYjvziR/F/gyCW40Ls+b5Xdt6XdSI4YIGpzLNJC
-# nzjI3t8vCtQo9MQap7GNS8s6PaEXqE3TZCo35SDHO9Yy2v9ZSXArC85jl/NiMLM+
-# N3w2pyv3ryCnx3nk/X04oS0vJDniXrCgEsMnbPmRYoypIE5ngFAxoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSHj8IQkZtpEjnS+JXD3kKp
+# dq+nLTANBgkqhkiG9w0BAQEFAASCAQCwYa1cWgrfaUoYv4xJaqAciredQ6cbML+R
+# IPYhBy991nvTEeM96UvqW5T41jJcIdnlMUIV7lAhGW2glH9GOaMVQVNj6/OcpV+/
+# QdsqG0Bbo2Hh41yLd+UxsCB+cPbzc8C7k+EAS7IZ/2/sxEOFWmGgJzaGvaffcQ7W
+# +zmXs+BIGqokU+KwNfmHzhns0VypMa1RILD5BBuDfncvAK5dL4zsq1y/QYGC3fs/
+# KfyHxWaoFGaEw1W6VXDG8uAxjWb4hd7KxHYY8VvbWT7AYV7hLkkFEY6QZbAv3w+o
+# IiliZdtF0+B8uGRT7L1wbYVXw9tLqdllUuGVBmV1vIx2gOJAynOyoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwNzAzMzkxMlowLwYJKoZIhvcNAQkEMSIEIHkCE7LzbAbC
-# r7QK3XV5yM4yGJzqs9fo6OCc19XgcwysMA0GCSqGSIb3DQEBAQUABIICAJtOvUpt
-# eVVTF1kRxnRFXzaRFdpX6isvGs20RPOoFc/ZMyEGavV2+eGq+5T1kf9bANAllRU4
-# AZXSqCKhXntRt51ZbAmf8I8uxLCgS5TJUzmAd0GG/KPafvHpGqjg4A2Y1isGy2Gw
-# bNY6s6NUr34uMNe/7uHSz07sK6Sc3amI+k0W678TPBzCbLsBa4JoBMS8QMr/idj3
-# Leb1Cg5yyXSST0zGCUw2EzWTBIbilKNxl32hmFIu7h4vbC9eEXXezuuj3PnrcG9D
-# LpPg7FRz/UeBooQn3TYse9z/sm5ZM4rW/9Hr/srhMXgjoRwCvz7hhgheJmhBDlBb
-# iVm4JDUuAVaWrCne1acZvt+ySLcTi6XpYyzJIojzyM7Y71CW2jCML8/fOemcpdoY
-# qDLcO+6PEaG+rvgeivHaYjeHFBc1m9+T2+VoMqU47bHPcoY6meGrwSm8PRSEFdC8
-# j2eoPGmplVo0Tmy2fOkFDaTIMnmCiH+liCrElazpJvt9V6BTIkfAZgTMKl5XvJVJ
-# 1gUd8C7PiX6H5X8sc/SJw/2i5m2B/bmJIsWmJMtHgeI5jzAJxN0jaxLd7irUOcEJ
-# F8+QpiotxMCX6rSFsV2vNkRcieCWS+ky2rwC5so4udPAaR9jLIYGx2MUx3YXXDD1
-# bo03oHHq0yAnpjq0TKyl+OP3X1dLOuV2BvVf
+# hvcNAQkFMQ8XDTIzMDcwNzE5MTIyMFowLwYJKoZIhvcNAQkEMSIEICcuerLOvlAl
+# QY4qkjyRUGvwnVJCY0VvjwdiXHLNeWBPMA0GCSqGSIb3DQEBAQUABIICAAoxkze+
+# Nh9rbik9rXLFFmX7jykRCP1C6DGV69UyG5mSUUTU2FCDwhk9X3JgAtTBmHaR6q+V
+# GFfLKCcaaupsvpXgvF2Pg1dTQ+G2pcWfgYKeCmFnyqKDMeTd0wvJrpQzipUh2i0O
+# m0CXXnc4oAkR+J93vaW2KIOC8rS2oWkI+RCRsqmLqH6EtildlyDr2jSyofkA/fm+
+# cmleuH37noC8Gaa33Jjx2q7gJGv1MW6ynRQL8ML0uJzp1I3dGXWjxazu99r4iFkQ
+# 3ZZ96mlQ/9VNzytwNGq3jVLd7u9KwmNa5nm/n4l7dA4/5/ehKVoh82R24Zw6U73l
+# 5uMTKzYcJ+U/+IMhW1dNrRY4VQshRu0cumA6Jg1YgnP7cmaHvAYwaTe16KF4XAae
+# 20RnDn33et1ckOnNSYknxSWS7NWuGchonS7Nqlyad4ee6kG9tbv8nj9/9RZdTjPu
+# kZUxDe5wxggQj113RMHIVaOL92NrM4fdCTaCmEerWbbxj846G39Q4+GwtCNoFrUf
+# M3uc8pvaXNwvWN/rB2pNEiJ3sZytMUW0+ul8j7y0ricb75RQ60XlqTcUHAQA8i9+
+# N9ICsPHNxzKGs6FEqIq6JyAJPsooCcKX1692h/VM4E3OVtRgETMTjErym+Bwu28R
+# eqQGw2d88Hs14KJ8FToYxAHbZzpH83RYDgx4
 # SIG # End signature block

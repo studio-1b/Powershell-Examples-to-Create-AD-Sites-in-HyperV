@@ -1,3 +1,18 @@
+$arglen=$($args.length)
+if($arglen -lt 1) {
+    Write-Host "Use same arguments as 'create_router_vm.ps1' to see the progress."
+    Write-Host ""
+   #Write-Host "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789|123456789 123456789 123456789"
+    Write-Host "                                    Prefix=Gateway/subnet=WANIP=Domain"
+    Write-Host "                                    ------    --------------      -----        ------"
+    Write-Host "if running..."
+    Write-Host "Running: ./create_router_vm.ps1     JMBC-Van=192.168.200.254/24=10.0.7.1/24=JoMaBoCh,JMBC-Tor=192.168.150.254/24=10.0.7.4/24=JoMaBoCh,JMBC-Mon=192.168.100.254/24=10.0.7.3/24=JoMaBoCh,JMBC-Cal=192.168.50.254/24=10.0.7.2/24=JoMaBoCh"
+    Write-Host "then to see progress, run..."
+    Write-Host "Usage:   ./progress_router_script.ps1 JMBC-Van=192.168.200.254/24=10.0.7.1/24=JoMaBoCh,JMBC-Tor=192.168.150.254/24=10.0.7.4/24=JoMaBoCh,JMBC-Mon=192.168.100.254/24=10.0.7.3/24=JoMaBoCh,JMBC-Cal=192.168.50.254/24=10.0.7.2/24=JoMaBoCh"
+
+    exit 1
+}
+
 function Create-Credential {
     param (
         $Resource,
@@ -369,10 +384,11 @@ $gatewaylist=$all -split ","
 
 
 
-
+cls
 $Time = [System.Diagnostics.Stopwatch]::StartNew()
 while ($true) {
-    cls
+    [System.Console]::SetCursorPosition(0, 0)
+
     $CurrentTime = $Time.Elapsed
     write-host $([string]::Format("`rTime: {0:d2}:{1:d2}:{2:d2}",
                                   $CurrentTime.hours,
@@ -381,25 +397,6 @@ while ($true) {
     write-host ""
     Show-Progress -all $all
     write-host ""
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
-    write-host "##################################"
     write-host "##################################"
 
     Start-Sleep -Seconds 5

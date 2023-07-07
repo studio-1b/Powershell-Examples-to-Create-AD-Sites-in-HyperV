@@ -36,6 +36,8 @@ Notes:
 
 -AND NO, it doesnt actually create the servers in those cities.  We are just pretending, creating a simulation of a network on your computer(with hopefully at least 32GB of RAM) with Hyper-V, using actual software. 
 
+-The *.ps1 scripts need to be run in a (Administrator) powershell window, b/c many of the functions only work for Administrators.  And quite frankly, for class project, i didn't want to research which ones.
+
 -Hyper-V exists, even in Windows 10 PROFESSIONAL/EDUCATION.  You just need to activate it, as part of "Featured software".  But if you install Hyper-V, other VM such as VMWare stops working.  This is b/c after you install Hyper-V, windows itself is running inside a VM.  And VM software needs to know if it is running inside another VM.
 
 -You need to get your own copy of Windows Server 2022 ISO and Product Key.  Yes, this is the annoying part, if you don't want to spend money on MSDN developer subscription.  Or take a course for educational evaluation version.
