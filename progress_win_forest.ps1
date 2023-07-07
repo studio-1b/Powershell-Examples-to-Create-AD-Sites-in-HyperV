@@ -124,14 +124,14 @@ function Test-Installation {
     # $Dc2Session=Wait-For-Session -server $Dc2Name -logincred $localcred -waitmessage "Please complete Windows install on $Dc2Name. Please set Administrator password to $plaintext"
     $Dc2IP=MergeUsingOr-Network-Addresses -ip1 $lannetwork -ip2 0.0.0.2
 
-
+   #Write-Host "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
     Get-VM $Dc1Name 2>$null 1>$null
-    Write-Host "[$?] host: Get-VM $Dc1Name"                                                                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
+    Write-Host "[$?] host: Get-VM $Dc1Name                                            "   -ForegroundColor $(iif $? "Green" "Red") 
 
     $domaincred= Create-Credential -Resource $domain -Username "Administrator" -PlaintextPassword $plaintext
     $localcred= Create-Credential -Resource "." -Username "Administrator" -PlaintextPassword $plaintext
     $Dc1Session=Wait-For-Session -server $Dc1Name -logincred $domaincred -localcred $localcred  -waitmessage "."  
-    Write-Host "[($($Dc1Session -ne $null))] host: New-PSSession -VMName $Dc1Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))"                    -ForegroundColor $(iif ($Dc1Session -ne $null) "Green" "Red") 
+    Write-Host "[($($Dc1Session -ne $null))] host: New-PSSession -VMName $Dc1Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))    "                    -ForegroundColor $(iif ($Dc1Session -ne $null) "Green" "Red") 
 
     if($Dc1Session -ne $null) {
         $ArgumentList=$DC1Name,$DC2Name,$FullyQualifiedDomainName,$lannetwork,$sites,$Dc1IP,$Dc2IP
@@ -147,36 +147,36 @@ function Test-Installation {
             $Dc2IP2=$args[6]
 
             ping -n 1 8.8.8.8
-            Write-Host "[$?] guest: ping 8.8.8.8"  -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: ping 8.8.8.8                                               "  -ForegroundColor $(iif $? "Green" "Red") 
 
             foreach($site2 in $sites2) {
                 $part2=$site2 -split "="
                 $othergateway=$part2[1].replace(".0/",".254/")
                 $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
                 ping -n 1 $othergateway 2>$null 1>$null
-                Write-Host "[$?] guest: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
+                Write-Host "[$?] guest: ping $othergateway                                     "  -ForegroundColor $(iif $? "Green" "Red") 
             }
 
             Resolve-DNSName  $DC1Name2
-            Write-Host "[$?] guest: Resolve-DNSName  $DC1Name2"                                                                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Resolve-DNSName  $DC1Name2                                 "                                                                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
 
             Resolve-DNSName  $DC2Name2
-            Write-Host "[$?] guest: Resolve-DNSName  $DC2Name2, for joined login auto dns register"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Resolve-DNSName  $DC2Name2, for joined login auto dns register   " -ForegroundColor $(iif $? "Green" "Red") 
 
             Resolve-DNSName  $FullyQualifiedDomainName2
-            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2, for list of domain controllers"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2, for list of domain controllers  "  -ForegroundColor $(iif $? "Green" "Red") 
 
             Resolve-DNSName  $FullyQualifiedDomainName2 | findstr $Dc1IP2
-            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc1IP2"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc1IP2     "  -ForegroundColor $(iif $? "Green" "Red") 
 
             Resolve-DNSName  $FullyQualifiedDomainName2 | findstr $Dc2IP2
-            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc2IP2"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc2IP2     "   -ForegroundColor $(iif $? "Green" "Red") 
 
             Get-DhcpServerv4Scope $lannetwork2
-            Write-Host "[$?] guest: Get-DhcpServerv4Scope $lannetwork2"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Get-DhcpServerv4Scope $lannetwork2                          "   -ForegroundColor $(iif $? "Green" "Red") 
 
             Get-DhcpServerv4Failover -ComputerName "$Dc1Name2" -Name "$lannetwork2-failover"
-            Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc1Name2' -Name '$lannetwork2'"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc1Name2' -Name '$lannetwork2'   "   -ForegroundColor $(iif $? "Green" "Red") 
 
             foreach($site2 in $sites2) {
                 $part2=$site2 -split "="
@@ -186,13 +186,13 @@ function Test-Installation {
                 $sitesubnet=$part2[1]
 
                 Get-ADReplicationSite -identity $sitename
-                Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename"   -ForegroundColor $(iif $? "Green" "Red") 
+                Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename                "   -ForegroundColor $(iif $? "Green" "Red") 
 
                 Get-ADReplicationSubnet -Identity $sitesubnet
-                Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $sitesubnet"   -ForegroundColor $(iif $? "Green" "Red") 
+                Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $sitesubnet            "   -ForegroundColor $(iif $? "Green" "Red") 
 
                 get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" | findstr "default-to-$sitename"
-                Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename"   -ForegroundColor $(iif $? "Green" "Red") 
+                Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
             }
         }
     }
@@ -201,10 +201,10 @@ function Test-Installation {
 
 
     Get-VM $Dc2Name 2>$null 1>$null
-    Write-Host "[$?] host: Get-VM $Dc2Name"     -ForegroundColor $(iif $? "Green" "Red") 
+    Write-Host "[$?] host: Get-VM $Dc2Name                                      "     -ForegroundColor $(iif $? "Green" "Red") 
 
     $Dc2Session=Wait-For-Session -server $Dc2Name -logincred $domaincred -localcred $localcred -waitmessage ""
-    Write-Host "[($($Dc2Session -ne $null))] host: New-PSSession -VMName $Dc2Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))"                    -ForegroundColor $(iif ($Dc2Session -ne $null) "Green" "Red") 
+    Write-Host "[($($Dc2Session -ne $null))] host: New-PSSession -VMName $Dc2Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))   "                    -ForegroundColor $(iif ($Dc2Session -ne $null) "Green" "Red") 
 
     if($Dc2Session -ne $null) {
     }
@@ -213,22 +213,22 @@ function Test-Installation {
     # testing on host
     # Internal Switch, should create a host adapter named ie: "vEthernet (JMBC-VanLAN)"
     get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
-        Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }"   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
-        Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)"
+        Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }    "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
+        Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)              "
     }  2>$null
 
     ping -n 1 $Dc1IP 2>$null 1>$null
-    Write-Host "[$?] host: ping -n 1 $Dc1IP"     -ForegroundColor $(iif $? "Green" "Red") 
+    Write-Host "[$?] host: ping -n 1 $Dc1IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
 
     ping -n 1 $Dc2IP 2>$null 1>$null
-    Write-Host "[$?] host: ping -n 1 $Dc2IP"     -ForegroundColor $(iif $? "Green" "Red") 
+    Write-Host "[$?] host: ping -n 1 $Dc2IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
 
     foreach($s in $sites) {
         $part=$s -split "="
         $othergateway=$part[1].replace(".0/",".254/")
         $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
         ping -n 1 $othergateway 2>$null 1>$null
-        Write-Host "[$?] host: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
+        Write-Host "[$?] host: ping $othergateway                              "  -ForegroundColor $(iif $? "Green" "Red") 
     }
 
 
@@ -296,8 +296,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPOPPnEEBmrh4r/WSjMAEeNob
-# AAOgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6pTejRhvWaskzVzFFjU8onLb
+# Cx2gghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -418,28 +418,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSHj8IQkZtpEjnS+JXD3kKp
-# dq+nLTANBgkqhkiG9w0BAQEFAASCAQCwYa1cWgrfaUoYv4xJaqAciredQ6cbML+R
-# IPYhBy991nvTEeM96UvqW5T41jJcIdnlMUIV7lAhGW2glH9GOaMVQVNj6/OcpV+/
-# QdsqG0Bbo2Hh41yLd+UxsCB+cPbzc8C7k+EAS7IZ/2/sxEOFWmGgJzaGvaffcQ7W
-# +zmXs+BIGqokU+KwNfmHzhns0VypMa1RILD5BBuDfncvAK5dL4zsq1y/QYGC3fs/
-# KfyHxWaoFGaEw1W6VXDG8uAxjWb4hd7KxHYY8VvbWT7AYV7hLkkFEY6QZbAv3w+o
-# IiliZdtF0+B8uGRT7L1wbYVXw9tLqdllUuGVBmV1vIx2gOJAynOyoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTZK7iPMYIa5Olkyrkx6Yac
+# 7k01YjANBgkqhkiG9w0BAQEFAASCAQCzhD3ZwGvgmjNOFKv5neRlAxDcEPUQfaeZ
+# 5v1Yf8hVd6GWjeNw9OtnnhIMfB2Ypln7HM7IZ2Rw3VLL8o65i3SqDSVhmOZmMdXa
+# RZSb2G+7JL4/AdFaueC/ZU3brsP/DJ+S7SVqxpqRed0CHzffN0EUifSkGW7mKna+
+# jsToHsnM+dVMoffM2nEgE80mzfbuTIRSdxUaF1BLR+69XF4LzTslwKUA38XygnLi
+# WYxnpTHAhjLvdxsfoxlv9EBw+IPS0QGhTHyVAMsXF+oR0XodDGQt9TfWejv8v0iV
+# QzSvrJTZX6J2rzo/hJpmGdQtkXd8+HTRHHbyEgewKSJJLpyox3VFoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwNzE5MTIyMFowLwYJKoZIhvcNAQkEMSIEICcuerLOvlAl
-# QY4qkjyRUGvwnVJCY0VvjwdiXHLNeWBPMA0GCSqGSIb3DQEBAQUABIICAAoxkze+
-# Nh9rbik9rXLFFmX7jykRCP1C6DGV69UyG5mSUUTU2FCDwhk9X3JgAtTBmHaR6q+V
-# GFfLKCcaaupsvpXgvF2Pg1dTQ+G2pcWfgYKeCmFnyqKDMeTd0wvJrpQzipUh2i0O
-# m0CXXnc4oAkR+J93vaW2KIOC8rS2oWkI+RCRsqmLqH6EtildlyDr2jSyofkA/fm+
-# cmleuH37noC8Gaa33Jjx2q7gJGv1MW6ynRQL8ML0uJzp1I3dGXWjxazu99r4iFkQ
-# 3ZZ96mlQ/9VNzytwNGq3jVLd7u9KwmNa5nm/n4l7dA4/5/ehKVoh82R24Zw6U73l
-# 5uMTKzYcJ+U/+IMhW1dNrRY4VQshRu0cumA6Jg1YgnP7cmaHvAYwaTe16KF4XAae
-# 20RnDn33et1ckOnNSYknxSWS7NWuGchonS7Nqlyad4ee6kG9tbv8nj9/9RZdTjPu
-# kZUxDe5wxggQj113RMHIVaOL92NrM4fdCTaCmEerWbbxj846G39Q4+GwtCNoFrUf
-# M3uc8pvaXNwvWN/rB2pNEiJ3sZytMUW0+ul8j7y0ricb75RQ60XlqTcUHAQA8i9+
-# N9ICsPHNxzKGs6FEqIq6JyAJPsooCcKX1692h/VM4E3OVtRgETMTjErym+Bwu28R
-# eqQGw2d88Hs14KJ8FToYxAHbZzpH83RYDgx4
+# hvcNAQkFMQ8XDTIzMDcwNzIwMjczOFowLwYJKoZIhvcNAQkEMSIEIM1bqtVq30Yc
+# 7AbXYsh5hMJpkM6/WtITUc8AkpcoKvhxMA0GCSqGSIb3DQEBAQUABIICAALAPx9k
+# N2mqaEY7478+QXY93V0+yy0ykY9e5XDerUNb8x+sGYX2ukRx+5UxtC4bCISkl60H
+# qx6s+xq/ygbDqQ7wpY6DH42+ZCLeHS2pOOcb5rsKG0MMkvoWZtYbFj0EAWRI9u90
+# 7l9vkAnoBG+P25QhQif4zjj0K3zxjshyF/xPlEuqfu+sJ3Zj68FqO26+mAv9cK1/
+# kFErWpgMAZj9jc9l86SUKXqwBboUiZYj1rHVYmuXNzm5eCMZ/H7sScQG6AK0kpLz
+# B5F8viJONGVCgjR9k9jJhI/90eQCq3dGhWssOE5t2AIjGvSHsBEZl7iCMtCgHrD1
+# y/UcZY50OJ8tPeCbAM9QjkQnaLjDKjxEqQd9Botf4lbReyOz+FJq+hq/mtWvOEIK
+# vjVguOvv5w9Zt6yl6plbuOFEOOlZhFOXIW7ob9/TB67Xv+4h2Be2WQxkLKxZeVY9
+# nXYejGb3q3EUGa/Uy8qMPW1jsEDUdCSJNv7vZyJTOa6+7a/J7cx3LJ/3A9g3/jzX
+# yWDHTFuDJlG09LE1+7SWtoNiZQJQln1n/MtOJ4ZH+prQ+/a2P1ftsgLUEv1GuiWe
+# 9OzH8DVBkVEBHwJ10EqAfglN/oDJgHPYNrywT60LnCZqSjJ1P7afy9Ffg9fdSmFy
+# G4Wgy3rQIVfNIshPNic0yc5w7MSWdtkHd49t
 # SIG # End signature block

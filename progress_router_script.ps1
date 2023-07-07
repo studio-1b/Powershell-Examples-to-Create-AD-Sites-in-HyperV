@@ -108,16 +108,17 @@ function Show-Progress {
     $alllan = $gatewaylist | % {$(ExtractIP -cidr ($_ -split "=")[1]) }
     $allwan = $gatewaylist | % {$(ExtractIP -cidr ($_ -split "=")[2]) }
     if ($all -eq "") {
+       #Write-Host "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 "
         Write-Host "Shared networks"
-        Write-Host "[ ] host: Get-VMSwitch $ISPName" -ForegroundColor Red
-        Write-Host "[ ] host: Get-VMSwitch $WANName" -ForegroundColor Red
+        Write-Host "[ ] host: Get-VMSwitch $ISPName                                      " -ForegroundColor Red
+        Write-Host "[ ] host: Get-VMSwitch $WANName                                      " -ForegroundColor Red
 
         foreach($lan in $gatewaylist) {
             $site=$lanargs[0]
             $cidr=$lanargs[1]
             $wanip=$lanargs[2]
             $domain=$lanargs[3]
-            Write-Host "Guest stub network: $site"
+            Write-Host "Guest stub network: $site                                        "
 
             $LANgatewayIP=ExtractIP -cidr $cidr
             $LANprefixlen=ExtractPrefixLen -cidr $cidr
@@ -131,43 +132,43 @@ function Show-Progress {
             $SwitchName=$site+"LAN"
             $VMName=$site+"Router"
 
-            Write-Host "LAN config confirmation"
-            Write-Host "[ ] guest: get-NetAdapter $SwitchName"                                                        -ForegroundColor Red
-            Write-Host "[ ] guest: get-NetIPAddress -InterfaceAlias LAN -IPAddress $LANgatewayIP"                     -ForegroundColor Red
+            Write-Host "LAN config confirmation                                          "
+            Write-Host "[ ] guest: get-NetAdapter $SwitchName                            "                            -ForegroundColor Red
+            Write-Host "[ ] guest: get-NetIPAddress -InterfaceAlias LAN -IPAddress $LANgatewayIP   "                  -ForegroundColor Red
 
-            Write-Host "Internet config confirmation"
-            Write-Host "[ ] guest: get-NetAdapter Internet"                                                           -ForegroundColor Red
-            Write-Host "[ ] guest: netsh routing ip nat show interface Internet"                                      -ForegroundColor Red
-            Write-Host "[ ] guest: netsh routing ip nat show interface LAN"                                           -ForegroundColor Red
-            Write-Host "[ ] guest: Find-NetRoute -RemoteIPAddress 8.8.8.8 | Where {$_.InterfaceAlias -eq Internet}"   -ForegroundColor Red
-            Write-Host "[ ] guest: ping 8.8.8.8"                                                                      -ForegroundColor Red
-            Write-Host "[ ] guest: nslookup www.google.ca"                                                            -ForegroundColor Red
+            Write-Host "Internet config confirmation                                     "
+            Write-Host "[ ] guest: get-NetAdapter Internet                               "                            -ForegroundColor Red
+            Write-Host "[ ] guest: netsh routing ip nat show interface Internet          "                            -ForegroundColor Red
+            Write-Host "[ ] guest: netsh routing ip nat show interface LAN               "                            -ForegroundColor Red
+            Write-Host "[ ] guest: Find-NetRoute -RemoteIPAddress 8.8.8.8 | Where {$_.InterfaceAlias -eq Internet}  " -ForegroundColor Red
+            Write-Host "[ ] guest: ping 8.8.8.8                                          "                            -ForegroundColor Red
+            Write-Host "[ ] guest: nslookup www.google.ca                                "                            -ForegroundColor Red
 
-            Write-Host "WAN config confirmation"
-            Write-Host "[ ] guest: get-NetIPAddress -InterfaceAlias WAN -IPAddress 10...."                   -ForegroundColor Red
+            Write-Host "WAN config confirmation                                          "
+            Write-Host "[ ] guest: get-NetIPAddress -InterfaceAlias WAN -IPAddress $WANgatewayIP "                   -ForegroundColor Red
             foreach($wan in $allwan) {
-                Write-Host "[ ] guest: ping $wan"                                                                     -ForegroundColor Red
+                Write-Host "[ ] guest: ping $wan                                           "                          -ForegroundColor Red
             }
 
             foreach($lan in $alllan) {
                 if ($lan -eq $LANgatewayIP) {
-                    Write-Host "[ ] guest: Find-NetRoute -RemoteIPAddress $lan | Where {$_.InterfaceAlias -eq LAN}" -ForegroundColor Red
+                    Write-Host "[ ] guest: Find-NetRoute -RemoteIPAddress $lan | Where {$_.InterfaceAlias -eq LAN}  " -ForegroundColor Red
                 } else {
-                    Write-Host "[ ] guest: Find-NetRoute -RemoteIPAddress $lan | Where {$_.InterfaceAlias -eq WAN}" -ForegroundColor Red
+                    Write-Host "[ ] guest: Find-NetRoute -RemoteIPAddress $lan | Where {$_.InterfaceAlias -eq WAN}  " -ForegroundColor Red
                 }
             }
             foreach($lan in $alllan) {
-                Write-Host "[ ] guest: ping $lan"                                                                     -ForegroundColor Red
+                Write-Host "[ ] guest: ping $lan                                         "                            -ForegroundColor Red
             }
         }
         return
     }
 
-    Write-Host "Shared networks" -BackgroundColor white -Foregroundcolor black 
+    Write-Host "Shared networks                                                          " -BackgroundColor white -Foregroundcolor black 
     Get-VMSwitch $ISPName  2>&1 > $null 
-    Write-Host "[$?] host: Get-VMSwitch $ISPName" -ForegroundColor (IIf $? "Green" "Red")
+    Write-Host "[$?] host: Get-VMSwitch $ISPName                                         " -ForegroundColor (IIf $? "Green" "Red")
     Get-VMSwitch $WANName   2>&1 > $null 
-    Write-Host "[$?] host: Get-VMSwitch $WANName" -ForegroundColor (IIf $? "Green" "Red")
+    Write-Host "[$?] host: Get-VMSwitch $WANName                                         " -ForegroundColor (IIf $? "Green" "Red")
 
     $gatewaylist=$all -split ","
     $alllan = $gatewaylist | % {$(ExtractIP -cidr $_.split('=')[1]) }
@@ -180,7 +181,7 @@ function Show-Progress {
         $cidr=$lanargs[1]
         $wanip=$lanargs[2]
         $domain=$lanargs[3]
-        Write-Host "Guest stub network: $site"  -BackgroundColor darkgray
+        Write-Host "Guest stub network: $site                                            "  -BackgroundColor darkgray
 
         $LANgatewayIP=ExtractIP -cidr $cidr
         $LANprefixlen=ExtractPrefixLen -cidr $cidr
@@ -194,11 +195,11 @@ function Show-Progress {
         $SwitchName=$site+"LAN"
         $VMName=$site+"Router"
 
-        Write-Host "LAN config confirmation"  -BackgroundColor darkgray
+        Write-Host "LAN config confirmation                                              "  -BackgroundColor darkgray
         Get-VMSwitch $SwitchName  2>$null 1>$null 
-        Write-Host "[$?] host: Get-VMSwitch $SwitchName" -ForegroundColor (IIf $? "Green" "Red")
+        Write-Host "[$?] host: Get-VMSwitch $SwitchName                                  " -ForegroundColor (IIf $? "Green" "Red")
         Get-VM $VMName  2>$null 1>$null 
-        Write-Host "[$?] host: Get-VM $VMName" -ForegroundColor (IIf $? "Green" "Red")
+        Write-Host "[$?] host: Get-VM $VMName                                            " -ForegroundColor (IIf $? "Green" "Red")
 
         Get-VM $VMName 2> $null
         if ($?) {
@@ -230,76 +231,76 @@ function Show-Progress {
 
                 get-NetAdapter LAN
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetAdapter LAN"                                                               -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetAdapter LAN   "                                                               -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
-        Write-Host "Internet config confirmation"  -BackgroundColor darkgray
+        Write-Host "Internet config confirmation                                     "  -BackgroundColor darkgray
 
                 get-NetIPAddress -InterfaceAlias LAN -IPAddress $LANgatewayIP
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetIPAddress -InterfaceAlias LAN -IPAddress $LANgatewayIP"                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetIPAddress -InterfaceAlias LAN -IPAddress $LANgatewayIP  "                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 get-NetAdapter Internet
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetAdapter Internet"                                                          -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetAdapter Internet             "                                                          -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 netsh routing ip nat show interface Internet | findstr "Mode              : Address and Port Translation"
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: netsh routing ip nat show interface Internet"                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: netsh routing ip nat show interface Internet                   "                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 netsh routing ip nat show interface LAN | findstr "Mode              : Address and Port Translation"
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: netsh routing ip nat show interface LAN"                                          -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: netsh routing ip nat show interface LAN             "                                          -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 Find-NetRoute -RemoteIPAddress "8.8.8.8" | Where {$_.InterfaceAlias -eq "Internet"} | findstr "InterfaceAlias     : Internet"
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress 8.8.8.8 | Where {`$_.InterfaceAlias -eq Internet}" -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress 8.8.8.8 | Where {`$_.InterfaceAlias -eq Internet}     " -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 ping -n 1 8.8.8.8
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping 8.8.8.8"                                                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping 8.8.8.8                                         "                                                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 Resolve-DNSName www.google.ca
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Resolve-DNSName www.google.ca"                                                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Resolve-DNSName www.google.ca                        "                                                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
-        Write-Host "WAN config confirmation"  -BackgroundColor darkgray
+        Write-Host "WAN config confirmation                                           "  -BackgroundColor darkgray
 
                 get-NetIPAddress -InterfaceAlias WAN -IPAddress $WANgatewayIP
                 $code=$code + (IIf $? $flag 0)
-                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetIPAddress -InterfaceAlias WAN -IPAddress $WANgatewayIP"                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                Write-Host "[$(IBAnd $code $flag "X" " ")] guest: get-NetIPAddress -InterfaceAlias WAN -IPAddress $WANgatewayIP    "                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
                 foreach($wan in $allwan) {
                     ping -n 1 $wan
                     $code=$code + (IIf $? $flag 0)
-                    Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping $wan"                                                                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                    Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping $wan                                        "                                                                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
                     $flag=$flag*2
                 }
                 foreach($lan in $alllan) {
                     if ($lan -eq $LANgatewayIP) {
                         Find-NetRoute -RemoteIPAddress $lan | Where {$_.InterfaceAlias -eq "LAN"} | findstr "InterfaceAlias     : LAN"
                         $code=$code + (IIf $? $flag 0)
-                        Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress $lan | Where {`$_.InterfaceAlias -eq LAN}" -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                        Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress $lan | Where {`$_.InterfaceAlias -eq LAN}   " -ForegroundColor (IBAnd $code $flag "Green" "Red")
                         $flag=$flag*2
                     } else {
                         Find-NetRoute -RemoteIPAddress $lan | Where {$_.InterfaceAlias -eq "WAN"} | findstr "InterfaceAlias     : WAN"
                         $code=$code + (IIf $? $flag 0)
-                        Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress $lan | Where {`$_.InterfaceAlias -eq WAN}" -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                        Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress $lan | Where {`$_.InterfaceAlias -eq WAN}   " -ForegroundColor (IBAnd $code $flag "Green" "Red")
                         $flag=$flag*2
                     }
                 }
                 foreach($lan in $alllan) {
                     ping -n 1 $lan
                     $code=$code + (IIf $? $flag 0)
-                    Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping $lan"                                                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
+                    Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping $lan                                        "                                                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
                     $flag=$flag*2
                 }
 
@@ -313,55 +314,6 @@ function Show-Progress {
         }
         Write-Host $rc
 
-<# commented code, put in above script block
-            $flag=1
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: get-NetIPAddress -InterfaceAlias LAN -IPAddress $LANgatewayIP"                   -ForegroundColor (IBAnd $rc 4 "Green" "Red")
-            $flag=$flag*2
-
-        Write-Host "Internet config confirmation" -foregroundcolor darkgray
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: get-NetAdapter Internet"                                                           -ForegroundColor (IBAnd $rc 1 "Green" "Red")
-            $flag=$flag*2
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: netsh routing ip nat show interface LAN"                                         -ForegroundColor (IBAnd $rc 256 "Green" "Red")
-            $flag=$flag*2
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: netsh routing ip nat show interface Internet"                                    -ForegroundColor (IBAnd $rc 512 "Green" "Red")
-            $flag=$flag*2
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress 8.8.8.8 | Where {`$_.InterfaceAlias -eq Internet}" -ForegroundColor (IBAnd $rc 1024 "Green" "Red")
-            $flag=$flag*2
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: ping 8.8.8.8"                                                                      -ForegroundColor (IBAnd $rc 8 "Green" "Red")
-            $flag=$flag*2
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: nslookup www.google.ca"                                                           -ForegroundColor (IBAnd $rc 16 "Green" "Red")
-            $flag=$flag*2
-
-        Write-Host "WAN config confirmation"
-
-            Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: get-NetIPAddress -InterfaceAlias WAN -IPAddress $WANgatewayIP"                   -ForegroundColor (IBAnd $rc 2 "Green" "Red")
-            $flag=$flag*2
-
-            foreach($wan in $allwan) {
-                Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: ping $wan"                                                             -ForegroundColor (IBAnd $rc 64 "Green" "Red")
-                $flag=$flag*2
-            }
-
-            foreach($lan in $alllan) {
-                if ($lan -eq $LANgatewayIP) {
-                    Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress $lan | Where {`$_.InterfaceAlias -eq LAN}" -ForegroundColor (IBAnd $rc 2048 "Green" "Red")
-                    $flag=$flag*2
-                } else {
-                    Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress $lan | Where {`$_.InterfaceAlias -eq WAN}" -ForegroundColor (IBAnd $rc 2048 "Green" "Red")
-                    $flag=$flag*2
-                }
-            }
-            foreach($lan in $alllan) {
-                Write-Host "[$(IBAnd $rc $flag "X" " ")] guest: ping $lan"                                                             -ForegroundColor (IBAnd $rc 64 "Green" "Red")
-                $flag=$flag*2
-            }
-#>
     }
 }
 
@@ -405,3 +357,153 @@ while ($true) {
         break;
     }
 }
+# SIG # Begin signature block
+# MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUopMY0NmtyGuHQmdqkLEJwTGo
+# Vs6gghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
+# NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
+# ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
+# u9xSU6J+nhYUwneEj3nz5QulBKBuMTjYUjieBgQsZcZyLI4wpWqmoH9CtWPi3yEN
+# aLkNXu8pKCSdU5u8cIlJ29rWIxyuyHA1VOV5jqhjPYpPJpxrmy9OZStirBaSNV0F
+# h3pMuigKRRbJ767JJiN2NKk3sFHTmjIpUjcG7KgAC+jzjuDTyOTwGJOKZqkMLapH
+# vP8pmATqOtSFXr+f/nFO8KF+dsDMGc+8W4yzqrGjtECv7HZuB25xHLmKiNlrYrH/
+# 2GEwPaaY726B0CJNWIcs5nWXm/2OCHvAcmdaSvzM6CvdIFGuRP5nvLNfG/7RFqC9
+# MIW2fCii1QIDAQABo0YwRDAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYB
+# BQUHAwMwHQYDVR0OBBYEFPRbWcU+yUoWe506mykLzQ7h4df2MA0GCSqGSIb3DQEB
+# CwUAA4IBAQBuxWS+EJ1nUt71FkgsQPMVTRPdWsfhe3N0Mm1D8k9oiXT00win5I7Y
+# gFHjzuqa1zp/fylw56JzBNATPepDExLHv0OvmOBP64gJs/+24qfvKOcvSDAMkT68
+# HoTJo6bcyOU93C5pH02pzCBIe7pj3rMVeTTLoxtUagZpgrdyprfuOZG6vq1plujk
+# shWeNkVz0EFnUkzR2cvzfwuiw2aSR4i+vJUAlVKV5qjC6gHQyqCd7D/s5AzU3Vqn
+# BZtW8Ag7NHDkULU6NoOnwcd9dHyKsQjOUSfbd0qJe/1rBU7e5y1niDj+qlANe8aG
+# xls+P+IYB1p9vmDuJbutX2E3fM9MjjUBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv
+# 21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMM
+# RGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQD
+# ExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcN
+# MzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQg
+# SW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2Vy
+# dCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoIC
+# AQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3yithZwuEppz1Yq3aaza57G4QNxDAf
+# 8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1Ifxp4VpX6+n6lXFllVcq9ok3DCsrp1
+# mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDVySAdYyktzuxeTsiT+CFhmzTrBcZe
+# 7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiODCu3T6cw2Vbuyntd463JT17lNecx
+# y9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQjdjUN6QuBX2I9YI+EJFwq1WCQTLX
+# 2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/CNdaSaTC5qmgZ92kJ7yhTzm1EVgX
+# 9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCiEhtmmnTK3kse5w5jrubU75KSOp49
+# 3ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADMfRyVw4/3IbKyEbe7f/LVjHAsQWCq
+# sWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QYuKZ3AeEPlAwhHbJUKSWJbOUOUlFH
+# dL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXKchYiCd98THU/Y+whX8QgUWtvsauG
+# i0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t9dmpsh3lGwIDAQABo4IBOjCCATYw
+# DwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU7NfjgtJxXWRM3y5nP+e6mK4cD08w
+# HwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6chnfNtyA8wDgYDVR0PAQH/BAQDAgGG
+# MHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNl
+# cnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20v
+# RGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0MEUGA1UdHwQ+MDwwOqA4oDaGNGh0
+# dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5j
+# cmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqGSIb3DQEBDAUAA4IBAQBwoL9DXFXn
+# OF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi+IcaaVQi7aSId229GhT0E0p6Ly23
+# OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n096wwepqLsl7Uz9FDRJtDIeuWcqFI
+# tJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ87PcDx4eo0kxAGTVGamlUsLihVo7s
+# pNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9vytsgjTVgHAIDyyCwrFigDkBjxZgi
+# wbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQtJ37YOtnwtoeW/VvRXKwYw02fc7cB
+# qZ9Xql4o4rmUMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG
+# 9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkw
+# FwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVz
+# dGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1BkmzwT1ySVFVxyUD
+# xPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkLf50fng8zH1AT
+# CyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C3GeO6lE98NZW
+# 1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5n12sy+iEZLRS
+# 8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUdzTYNXNXmG6jB
+# ZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWHpo9OdhVVJnCY
+# Jn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/oN7jPqJz+ucf
+# WmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPVA+C/8KI8ykLc
+# GEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg0ixXNXkrqPNF
+# YLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mMDDtbiiKowSYI
+# +RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6EVO7O6V3IXjAS
+# vUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB/wQIMAYBAf8C
+# AQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1UdIwQYMBaAFOzX
+# 44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAKBggr
+# BgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0fBDwwOjA4oDag
+# NIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RH
+# NC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcBMA0GCSqGSIb3
+# DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBTzr8Y+8dQXeJL
+# Kftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/EUExiHQwIgqgW
+# valWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fmniye4Iqs5f2M
+# vGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szwcqMj+sAngkSu
+# mScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8THwcFqcdnGE4AJ
+# xLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/JWOZJyw9P2un
+# 8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9Pzt4rUyt+8SV
+# e+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm228Vex4Ziza4
+# k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVBtzrVFZgxtGIJ
+# Dwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnwZXZCpimHCUcr
+# 5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv27dZ8/DCCBsAw
+# ggSooAMCAQICEAxNaXJLlPo8Kko9KQeAPVowDQYJKoZIhvcNAQELBQAwYzELMAkG
+# A1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdp
+# Q2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQTAe
+# Fw0yMjA5MjEwMDAwMDBaFw0zMzExMjEyMzU5NTlaMEYxCzAJBgNVBAYTAlVTMREw
+# DwYDVQQKEwhEaWdpQ2VydDEkMCIGA1UEAxMbRGlnaUNlcnQgVGltZXN0YW1wIDIw
+# MjIgLSAyMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAz+ylJjrGqfJr
+# u43BDZrboegUhXQzGias0BxVHh42bbySVQxh9J0Jdz0Vlggva2Sk/QaDFteRkjgc
+# MQKW+3KxlzpVrzPsYYrppijbkGNcvYlT4DotjIdCriak5Lt4eLl6FuFWxsC6ZFO7
+# KhbnUEi7iGkMiMbxvuAvfTuxylONQIMe58tySSgeTIAehVbnhe3yYbyqOgd99qtu
+# 5Wbd4lz1L+2N1E2VhGjjgMtqedHSEJFGKes+JvK0jM1MuWbIu6pQOA3ljJRdGVq/
+# 9XtAbm8WqJqclUeGhXk+DF5mjBoKJL6cqtKctvdPbnjEKD+jHA9QBje6CNk1prUe
+# 2nhYHTno+EyREJZ+TeHdwq2lfvgtGx/sK0YYoxn2Off1wU9xLokDEaJLu5i/+k/k
+# ezbvBkTkVf826uV8MefzwlLE5hZ7Wn6lJXPbwGqZIS1j5Vn1TS+QHye30qsU5Thm
+# h1EIa/tTQznQZPpWz+D0CuYUbWR4u5j9lMNzIfMvwi4g14Gs0/EH1OG92V1LbjGU
+# KYvmQaRllMBY5eUuKZCmt2Fk+tkgbBhRYLqmgQ8JJVPxvzvpqwcOagc5YhnJ1oV/
+# E9mNec9ixezhe7nMZxMHmsF47caIyLBuMnnHC1mDjcbu9Sx8e47LZInxscS451Ne
+# X1XSfRkpWQNO+l3qRXMchH7XzuLUOncCAwEAAaOCAYswggGHMA4GA1UdDwEB/wQE
+# AwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMCAGA1Ud
+# IAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSMEGDAWgBS6FtltTYUv
+# cyl2mi91jGogj57IbzAdBgNVHQ4EFgQUYore0GH8jzEU7ZcLzT0qlBTfUpwwWgYD
+# VR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0
+# VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NBLmNybDCBkAYIKwYB
+# BQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNv
+# bTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lD
+# ZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NBLmNydDANBgkq
+# hkiG9w0BAQsFAAOCAgEAVaoqGvNG83hXNzD8deNP1oUj8fz5lTmbJeb3coqYw3fU
+# ZPwV+zbCSVEseIhjVQlGOQD8adTKmyn7oz/AyQCbEx2wmIncePLNfIXNU52vYuJh
+# ZqMUKkWHSphCK1D8G7WeCDAJ+uQt1wmJefkJ5ojOfRu4aqKbwVNgCeijuJ3XrR8c
+# uOyYQfD2DoD75P/fnRCn6wC6X0qPGjpStOq/CUkVNTZZmg9U0rIbf35eCa12VIp0
+# bcrSBWcrduv/mLImlTgZiEQU5QpZomvnIj5EIdI/HMCb7XxIstiSDJFPPGaUr10C
+# U+ue4p7k0x+GAWScAMLpWnR1DT3heYi/HAGXyRkjgNc2Wl+WFrFjDMZGQDvOXTXU
+# WT5Dmhiuw8nLw/ubE19qtcfg8wXDWd8nYiveQclTuf80EGf2JjKYe/5cQpSBlIKd
+# rAqLxksVStOYkEVgM4DgI974A6T2RUflzrgDQkfoQTZxd639ouiXdE4u2h4djFrI
+# HprVwvDGIqhPm73YHJpRxC+a9l+nJ5e6li6FV8Bg53hWf2rvwpWaSxECyIKcyRoF
+# fLpxtU56mWz06J7UWpjIn7+NuxhcQ/XQKujiYu54BNu90ftbCqhwfvCXhHjjCANd
+# RyxjqCU4lwHSPzra5eX25pvcfizM/xdMTQCi2NYBDriL7ubgclWJLCcZYfZ3AYwx
+# ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
+# sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
+# gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQY2xRgCEv9UW0T+ZIufA1n
+# ApiVvjANBgkqhkiG9w0BAQEFAASCAQCjV/Fe0wBuofxH1LnK3Z8+S3lBTEuJsupv
+# iQC9GGKEAro2gfpcMpmlULMbRFKtv5987rRt9t3zw7L4+B/qpRoxQYBriBajHonh
+# SZb3EVcQp6emjBLYAQpLvu4G9c6zXFCmUXhDehf15bpcp4jJ+HBKpUGB5q7/1QV2
+# TnpacYVdSfte/i6tLjWd9mhCl8nvCp2ctxPJx+lHvb8vOhKkWWAWZGlZKpXc8/jN
+# M3d0HW/zg00SWmqi3JNPEcULgNLuPuvXiGg1i2JtNctYjTzNt/xbdaGUuANN9MEL
+# mTJV2Q5zHu7ozCXpxKyDB3jhYA+3rOrXk0GqlqHen4YCy0lEoZP5oYIDIDCCAxwG
+# CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
+# DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
+# QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
+# BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
+# hvcNAQkFMQ8XDTIzMDcwNzIwMjczOFowLwYJKoZIhvcNAQkEMSIEIAQVfP/7IqAS
+# ErQk4RW4fvNpyktYFq0BpWnPDSm01vmVMA0GCSqGSIb3DQEBAQUABIICAC2IEr1W
+# eblVvqJXBvP2lkEXJOet0MgENknfmhZy2js8VNAYgpt7tA5Cj6SWc7e9H67cZ49Y
+# UQzaV0FqP6TdxPqtPwzv5yfYsrkMjf3CtSCsGqIvJAt8RCBSwDxbDpLqbVkQawbm
+# QIJscneCjcW2Bn5ombQ4q+cu4vlZGYT/X65EY84w3MEGuSHYj3+JPmXsoEwz4UBa
+# dCPnISRWIvJYaa4GNtk7E84KxlYdbjLBXC5tGoXW4whm33oGafyGAZ+RWpNV2Xym
+# yLjEhxsQr6oWIqttb2VxCX8E7weRDqgdCiZQ0npICIY8h54kgzzh20osTlt/0wqk
+# Na7OsXTTnjAolsCsaLF97UXKAcklLKjHB9RVMmnen/PufbEcWG47jI0KWvZ13KdQ
+# UkSrj6G0iJQpP6hq3wGiM5SEL4zwJUBJnocEWR5GbDg5gjAxLKhZSr0I68IfNub2
+# rY7YOIetgC3e5CYxIrItL2jkDb3vp39nZE4GrKbobNdrf2vzAjwrdIb9rCe6YIF0
+# Ey9Lx5nqU8YkhNk0iI3403K/pOw55ect3KHRM4xgbozVI2BSS/N/xjgJ+NDI6Thi
+# bAZtYkF8xF2uiw5ZurpiSB7rTO5yAinSjjMrjaHjqrs9cwsFBedKinEc7TwLVZTN
+# fIKgiLWitIWCpeHSOejbvwGMVKC5PbbbSI6A
+# SIG # End signature block
