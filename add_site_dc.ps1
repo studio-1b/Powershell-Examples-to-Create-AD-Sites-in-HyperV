@@ -1,15 +1,14 @@
 <#
 has to be run as administrator!  Check the script, if you like
 
-Creates Hyper-V guests that start a AD Forest, and waits for OS installation
+Creates Hyper-V guests that creates Domain Controllers for new site, and waits for OS installation
 
 1st parameter = site prefix, like Vancouver, which will be added to all VM and servernames
                 VancouverRouter
                 VancouverDC1
                 VancouverDC2
 2nd parameter = subnet cidr for site, 192.168.1.1/24 
-3rd parameter = other AD sites/subnets
-4th parameter = DomainName
+3rd parameter = DomainName
 
 #>
 
@@ -17,13 +16,13 @@ $arglen=$($args.length)
 if($arglen -lt 4) {
     Write-Host "Run once, at a Site, to start a AD Forest...  To install other sites to join this domain, run join script"
    #Write-Host "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789|123456789 123456789 123456789"
-    Write-Host "                               Prefix    Gateway/subnet      other site subnets                      			Domain"
-    Write-Host "                               ------    --------------      ---------------                       				------"
-    Write-Host "Usage: ./create_win_forest.ps1 JMBC-Van  192.168.200.254/24  Tor=192.168.150.0/24,Mon=192.168.100.0/24,Cal=192.168.50.0/24  JoMaBoCh"
-    Write-Host "or     ./create_win_forest.ps1 Toronto   192.168.150.254/24  Van=192.168.200.0/24,Mon=192.168.100.0/24,Cal=192.168.50.0/24  JoMaBoCh"
-    Write-Host "or     ./create_win_forest.ps1 Montreal  192.168.100.254/24  Van=192.168.200.0/24,Tor=192.168.150.0/24,Cal=192.168.50.0/24  JoMaBoCh"
-    Write-Host "or     ./create_win_forest.ps1 Calgary   192.168.50.254/24   Van=192.168.200.0/24,Tor=192.168.150.0/24,Mon=192.168.100.0/24 JoMaBoCh"
-    Write-Host "Usage: ./create_win_forest.ps1 JMBC-Van  192.168.200.254/24  JMBC-Tor=192.168.150.0/24,JMBC-Mon=192.168.100.0/24,JMBC-Cal=192.168.50.0/24  JoMaBoCh"
+    Write-Host "                         Prefix    Gateway/subnet      Domain   Forest-DNS"
+    Write-Host "                         ------    --------------      ------   ----------"
+    Write-Host "Usage: ./add_site_dc.ps1 JMBC-Tor  192.168.150.254/24  JoMaBoCh 192.168.200.1"
+    Write-Host "and    ./add_site_dc.ps1 JMBC-Mon  192.168.100.254/24  JoMaBoCh 192.168.200.1"
+    Write-Host "and    ./add_site_dc.ps1 JMBC-Cal  192.168.50.254/24   JoMaBoCh 192.168.200.1"
+    Write-Host "If you chose another site as the forest start..."
+    Write-Host "or     ./add_site_dc.ps1 Vancouver 192.168.200.254/24  JoMaBoCh <IP address of 1st DC>"
 
     exit 1
 }
@@ -31,10 +30,8 @@ if($arglen -lt 4) {
 $site=$args[0]
 $firstsite=$site
 $cidr=$args[1]
-$sitesstring=$args[2]
-$domain=$args[3]
-$sites=$sitesstring -split ","
-
+$domain=$args[2]
+$dc_dns=$args[3]
 
 
 
@@ -202,46 +199,6 @@ function Set-StaticIP-on-Guest {
     Write-Host "$ComputerName is restarting, if static address updated..." -ForegroundColor Green
 }
 
-function Start-AD-on-Guest {
-    param (
-        $Session,
-        $DomainName,
-        $PlaintextRecoveryPassword
-    )
-    Write-Host "Forest [$DomainName] " -ForegroundColor Yellow
-    $ArgumentList=$DomainName,$PlaintextRecoveryPassword
-    $rc=Invoke-Command -Session $Session -ArgumentList $ArgumentList -ScriptBlock {
-        $DomainName=$args[0]
-        $PlaintextRecoveryPassword=$args[1]
-        $FullyQualifiedDomainName=$DomainName+".ca"
-
-        Get-ADDomainController
-        if($?) { return $false }  else { Write-Host "That was expected.  No problem. Installing AD..." }
-
-        Add-WindowsFeature AD-Domain-Services -IncludeManagementTools
-
-        # Install-ADDSForest -DomainName $DomainName -InstallDNS
-        $recoverypassword = ConvertTo-SecureString $PlaintextRecoveryPassword -AsPlainText -Force
-        Install-ADDSForest -CreateDnsDelegation:$false -DatabasePath C:\Windows\NTDS -DomainMode WinThreshold -DomainName $FullyQualifiedDomainName -DomainNetbiosName $DomainName -ForestMode WinThreshold -InstallDns:$true -LogPath C:\Windows\NTDS -NoRebootOnCompletion:$true -SafeModeAdministratorPassword $recoverypassword -SysvolPath C:\Windows\SYSVOL -Force:$true
-        
-        New-ADUser admin -AccountPassword $recoverypassword -PasswordNeverExpires $true
-        Add-ADGroupMember -Identity "Enterprise Admins" -Members admin
-        Add-ADGroupMember -Identity "Domain Admins" -Members admin
-        Write-Host "user[admin] created" -ForegroundColor Green
-        
-        Restart-Computer -Force
-        return $true
-    }
-    Write-Host "[$rc]"
-    $tp=$rc.GetType().Name
-    if($tp -eq "Object[]") { $rc=$rc[-1] }
-    if($rc) { 
-        Checkpoint-VM -Name "new domain forest and dc" -SnapshotName "Domain Created"
-        Write-Host "Checkpoint"
-        Start-Sleep -Seconds 60
-    }
-    Write-Host "new domain forest and dc [$($Session.ComputerName)]... is restarting..." -ForegroundColor Green
-}
 function Add-AD-on-Guest {
     param (
         $Session,
@@ -276,7 +233,7 @@ function Add-AD-on-Guest {
         exit 1 
     }
 
-    Start-Sleep -Seconds 20
+    Start-Sleep -Seconds 15
 
     $DCName=$($session.ComputerName)    
     $domaincred= Create-Credential -Resource $DomainName -Username "Administrator" -PlaintextPassword $plaintext
@@ -317,44 +274,6 @@ function Add-AD-on-Guest {
         Start-Sleep -Seconds 60
     }
     Write-Host "Finished add Domain Controller [$($Session.ComputerName)] to [$DomainName]... is restarting..." -ForegroundColor Green
-}
-function Add-Admin-User {
-    param (
-        $Session,
-        $DomainName,
-        $DomainPlaintextPassword
-    )
-
-    Write-Host "Creating new user [admin] in [$DomainName] " -ForegroundColor Yellow
-
-    $DCName=$($session.ComputerName)    
-    $domaincred= Create-Credential -Resource $DomainName -Username "Administrator" -PlaintextPassword $DomainPlaintextPassword
-    ###  $Session=Wait-For-Session -server $DCName -logincred $domaincred -waitmessage "..."
-
-    $ArgumentList=$DCName,$DomainName,$DomainPlaintextPassword
-    $rc=Invoke-Command -Session $Session -ArgumentList $ArgumentList -ScriptBlock {
-        $itself=$args[0]
-        $DomainName=$args[1]
-        $DomainPlaintextPassword=$args[2]
-
-        Get-ADUser admin         
-        if($?) {Write-Host "[admin]exists already";return $true}
-
-        $password = ConvertTo-SecureString $DomainPlaintextPassword -AsPlainText -Force
-        New-ADUser admin -AccountPassword $password -PasswordNeverExpires $true
-        Add-ADGroupMember -Identity "Enterprise Admins" -Members admin
-        Add-ADGroupMember -Identity "Domain Admins" -Members admin
-        Enable-ADAccount -Identity "admin"
-        Write-Host "user[admin] created" -ForegroundColor Green
-        
-        return $true
-    }
-    Write-Host "[$rc]"
-    $tp=$rc.GetType().Name
-    if($tp -eq "Object[]") { $rc=$rc[-1] }
-    if($rc) {
-    }
-    Write-Host "Finished add Add-Admin-User [admin] to [$DomainName]... is restarting..." -ForegroundColor Green
 }
 function Rename-LAN-NIC {
     param (
@@ -753,26 +672,28 @@ function Install-Site-Subnet {
         Get-ADReplicationSite -identity $SiteName2
         if (! $?) {
             New-ADReplicationSite -Name $SiteName2
+            if(-not $?) { return $false}
         } else {
-            Write-Host "site [$SiteName2] already exists"
+            Write-Host "site [$SiteName2] created already"
         }
 
         get-ADReplicationSubnet -Filter "Name -eq `'$Subnet2`'" | findstr "$Subnet2"
         if (! $?) {
             New-ADReplicationSubnet -Name $Subnet2 -Site $SiteName2
+            if(-not $?) { return $false}
         } else { 
-            Write-Host "subnet [$Subnet2] already exits"
+            Write-Host "subnet [$Subnet2] created already"
         }
 
         $linkname="default-to-$SiteName2"
-        get-ADReplicationSiteLink -filter "Name -eq `'$linkname`'" | findstr $linkname
+        get-ADReplicationSiteLink -filter "Name -eq `'$linkname`'" | findstr "$linkname"
         if (! $?) {
             New-ADReplicationSiteLink -Name "$linkname" -SitesIncluded Default-First-Site-Name,$SiteName2
+            if(-not $?) { return $false}
         } else { 
-            Write-Host "site link [$linkname] already exists"
+            Write-Host "site link [$linkname] created already"
         }
 
-        if(-not $?) { return $false}
         return $true
     }
     $tp=$rc.GetType().Name
@@ -790,6 +711,8 @@ function Test-Installation {
     param (
         $FullyQualifiedDomainName
     )
+    # this is only function that uses global variables bc I got lazy
+
     $LANgatewayIP=ExtractIP -cidr $cidr
     $LANprefixlen=ExtractPrefixLen -cidr $cidr
     $LANnetwork=Get-Network-Address -cidr $cidr
@@ -816,7 +739,7 @@ function Test-Installation {
     Write-Host "[($($Dc1Session -ne $null))] host: New-PSSession -VMName $Dc1Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))"                    -ForegroundColor $(iif ($Dc1Session -ne $null) "Green" "Red") 
 
     if($Dc1Session -ne $null) {
-        $ArgumentList=$DC1Name,$DC2Name,$FullyQualifiedDomainName,$lannetwork,$sites,$Dc1IP,$Dc2IP
+        $ArgumentList=$DC1Name,$DC2Name,$FullyQualifiedDomainName,$lannetwork,$dc_dns,$Dc1IP,$Dc2IP,$firstsite
         $rc=Invoke-Command -Session $Dc1Session -ArgumentList $ArgumentList -ScriptBlock {
             Function IIf($If, $Right, $Wrong) {If ($If) {$Right} Else {$Wrong}}
 
@@ -824,26 +747,30 @@ function Test-Installation {
             $DC2Name2=$args[1]
             $FullyQualifiedDomainName2=$args[2]
             $lannetwork2=$args[3]
-            $sites2=$args[4]
+            $dc_dns2=$args[4]
             $Dc1IP2=$args[5]
             $Dc2IP2=$args[6]
+            $sitename=$args[7]
 
             ping -n 1 8.8.8.8
             Write-Host "[$?] guest: ping 8.8.8.8"  -ForegroundColor $(iif $? "Green" "Red") 
 
-            foreach($site2 in $sites2) {
-                $part2=$site2 -split "="
-                $othergateway=$part2[1].replace(".0/",".254/")
-                $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-                ping -n 1 $othergateway 2>$null 1>$null
-                Write-Host "[$?] guest: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
-            }
+            ping -n 1 $dc_dns2
+            Write-Host "[$?] guest: ping -n 1 $dc_dns2"  -ForegroundColor $(iif $? "Green" "Red") 
 
+            Write-Host "(below uses Resolve-DNSName, instead of nslookup, b/c nslookup still returns $true exit code despite unable to find DNS record)"
             Resolve-DNSName  $DC1Name2
             Write-Host "[$?] guest: Resolve-DNSName  $DC1Name2"                                                                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
 
             Resolve-DNSName  $DC2Name2
-            Write-Host "[$?] guest: Resolve-DNSName  $DC2Name2, for joined login auto dns register"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Resolve-DNSName  $DC2Name2"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "(above on DC1 uses $dc_dns2 as DNS, below uses itself as DNS)"
+
+            Resolve-DNSName $DC1Name2 -server 127.0.0.1
+            Write-Host "[$?] guest: Resolve-DNSName $DC1Name2 -server 127.0.0.1"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+
+            Resolve-DNSName $DC2Name2 -server 127.0.0.1
+            Write-Host "[$?] guest: Resolve-DNSName $DC2Name2 -server 127.0.0.1"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
 
             Resolve-DNSName  $FullyQualifiedDomainName2
             Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2, for list of domain controllers"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
@@ -858,24 +785,16 @@ function Test-Installation {
             Write-Host "[$?] guest: Get-DhcpServerv4Scope $lannetwork2"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
 
             Get-DhcpServerv4Failover -ComputerName "$Dc1Name2" -Name "$lannetwork2-failover"
-            Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc1Name2' -Name '$lannetwork2'"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc1Name2' -Name '$lannetwork2-failover'"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
 
-            foreach($site2 in $sites2) {
-                $part2=$site2 -split "="
-                #$othergateway=$part2[1].replace(".0/",".254/")
-                #$othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-                $sitename=$part2[0]
-                $sitesubnet=$part2[1]
+            Get-ADReplicationSite -identity $sitename
+            Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename"   -ForegroundColor $(iif $? "Green" "Red") 
 
-                Get-ADReplicationSite -identity $sitename
-                Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename"   -ForegroundColor $(iif $? "Green" "Red") 
+            Get-ADReplicationSubnet -Identity "$lannetwork2/24"
+            Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $lannetwork2/24"   -ForegroundColor $(iif $? "Green" "Red") 
 
-                Get-ADReplicationSubnet -Identity $sitesubnet
-                Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $sitesubnet"   -ForegroundColor $(iif $? "Green" "Red") 
-
-                get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" | findstr "default-to-$sitename"
-                Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename"   -ForegroundColor $(iif $? "Green" "Red") 
-            }
+            get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" | findstr "default-to-$sitename"
+            Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename"   -ForegroundColor $(iif $? "Green" "Red") 
         }
     }
 
@@ -889,6 +808,63 @@ function Test-Installation {
     Write-Host "[($($Dc2Session -ne $null))] host: New-PSSession -VMName $Dc2Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))"                    -ForegroundColor $(iif ($Dc2Session -ne $null) "Green" "Red") 
 
     if($Dc2Session -ne $null) {
+        $ArgumentList=$DC1Name,$DC2Name,$FullyQualifiedDomainName,$lannetwork,$dc_dns,$Dc1IP,$Dc2IP,$firstsite
+        $rc=Invoke-Command -Session $Dc2Session -ArgumentList $ArgumentList -ScriptBlock {
+            Function IIf($If, $Right, $Wrong) {If ($If) {$Right} Else {$Wrong}}
+
+            $DC1Name2=$args[0]
+            $DC2Name2=$args[1]
+            $FullyQualifiedDomainName2=$args[2]
+            $lannetwork2=$args[3]
+            $dc_dns2=$args[4]
+            $Dc1IP2=$args[5]
+            $Dc2IP2=$args[6]
+            $sitename=$args[7]
+
+            ping -n 1 8.8.8.8
+            Write-Host "[$?] guest: ping 8.8.8.8"  -ForegroundColor $(iif $? "Green" "Red") 
+
+            ping -n 1 $dc_dns2
+            Write-Host "[$?] guest: ping -n 1 $dc_dns2"  -ForegroundColor $(iif $? "Green" "Red") 
+
+            Write-Host "(below uses Resolve-DNSName, instead of nslookup, b/c nslookup still returns $true exit code despite unable to find DNS record)"
+            Resolve-DNSName  $DC1Name2
+            Write-Host "[$?] guest: Resolve-DNSName  $DC1Name1"                                                                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+
+            Resolve-DNSName  $DC2Name2
+            Write-Host "[$?] guest: Resolve-DNSName  $DC2Name2"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+            Write-Host "(above on DC1 uses $dc_dns2 as DNS, below uses itself as DNS)"
+
+            Resolve-DNSName $DC1Name2 -server 127.0.0.1
+            Write-Host "[$?] guest: Resolve-DNSName $DC1Name2 -server 127.0.0.1"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+
+            Resolve-DNSName $DC2Name2 -server 127.0.0.1
+            Write-Host "[$?] guest: Resolve-DNSName $DC2Name2 -server 127.0.0.1"                                                                                                 -ForegroundColor $(iif $? "Green" "Red") 
+
+            Resolve-DNSName  $FullyQualifiedDomainName2
+            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2, for list of domain controllers"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+
+            Resolve-DNSName  $FullyQualifiedDomainName2 | findstr $Dc1IP2
+            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc1IP2"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+
+            Resolve-DNSName  $FullyQualifiedDomainName2 | findstr $Dc2IP2
+            Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc2IP2"                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
+
+            Get-DhcpServerv4Scope $lannetwork2
+            Write-Host "[$?] guest: Get-DhcpServerv4Scope $lannetwork2"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
+
+            Get-DhcpServerv4Failover -ComputerName "$Dc2Name2" -Name "$lannetwork2-failover"
+            Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc2Name2' -Name '$lannetwork2-failover'"                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
+
+            Get-ADReplicationSite -identity $sitename
+            Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename"   -ForegroundColor $(iif $? "Green" "Red") 
+
+            Get-ADReplicationSubnet -Identity "$lannetwork2/24"
+            Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $lannetwork2/24"   -ForegroundColor $(iif $? "Green" "Red") 
+
+            get-ADReplicationSiteLink -filter "Name -eq 'Default-to-$sitename'" | findstr "Default-to-$sitename"
+            Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'Default-to-$sitename' | findstr Default-to-$sitename"   -ForegroundColor $(iif $? "Green" "Red") 
+        }
     }
 
 
@@ -904,14 +880,6 @@ function Test-Installation {
 
     ping -n 1 $Dc2IP 2>$null 1>$null
     Write-Host "[$?] host: ping -n 1 $Dc2IP"     -ForegroundColor $(iif $? "Green" "Red") 
-
-    foreach($s in $sites) {
-        $part=$s -split "="
-        $othergateway=$part[1].replace(".0/",".254/")
-        $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-        ping -n 1 $othergateway 2>$null 1>$null
-        Write-Host "[$?] host: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
-    }
 
 
     ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
@@ -1010,22 +978,24 @@ $localcred= Create-Credential -Resource "." -Username "Administrator" -Plaintext
 # installing hostname and IP on DC1
 $Dc1Session=Wait-For-Session -server $Dc1Name -logincred $localcred -waitmessage "Please complete Windows install on $Dc1Name. Please set Administrator password to $plaintext"
 $Dc1IP=MergeUsingOr-Network-Addresses -ip1 $lannetwork -ip2 0.0.0.1
-Set-StaticIP-on-Guest -Session $Dc1Session  -IP4 $Dc1IP  -GatewayIPwCIDR $cidr  -DnsIP 127.0.0.1  -ComputerName $Dc1Name
+Set-StaticIP-on-Guest -Session $Dc1Session  -IP4 $Dc1IP  -GatewayIPwCIDR $cidr  -DnsIP $dc_dns  -ComputerName $Dc1Name
 
 Start-Sleep -Seconds 5
 
 # installing AD FOREST/DOMAIN on DC1 (no internet yet)
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $localcred -waitmessage "..."
-Start-AD-on-Guest -Session $Dc1Session -DomainName $domain -PlaintextRecoveryPassword $plaintext
+#Start-AD-on-Guest -Session $Dc1Session -DomainName $domain -PlaintextRecoveryPassword $plaintext
+Add-AD-on-Guest -Session $Dc1Session -DomainName $domain -DomainPlaintextPassword $plaintext
 Start-Sleep -Seconds 5
 $domaincred= Create-Credential -Resource $domain -Username "Administrator" -PlaintextPassword $plaintext
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
-Add-Admin-User -Session $Dc1Session -DomainName $domain -$DomainPlaintextPassword $plaintext
+
 Install-DNS-Reverse-Zone -VMName $Dc1Name -Session $Dc1Session -LANsubnetWithCIDR $lannetworkcidr
 
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
 Install-DHCP-Scope -VMName $Dc1Name -Session $Dc1Session  -FullyQualifiedDomainName $domainca  -DhcpIP $Dc1IP -DnsIP $Dc1IP -GatewayIP $LANgatewayIP  -LANsubnetWithCIDR $lannetworkcidr
 
+Start-Sleep -Seconds 10
 
 
 
@@ -1055,15 +1025,12 @@ $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmes
 Install-DHCP-Failover -VMName $Dc1Name -Session $Dc1Session -FullyQualifiedDomainName $domainca -DhcpIP $Dc2Name -ScopeID $lannetwork
 # Write-Warning "DHCP failover needs to be configured manually!!!"
 
-# Again on DC1 to install site/subnet
-$Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
-foreach($site in $sites) {
-    $parts=$site -split '='
-    $Subnet=$parts[1]
-    $SiteName=$parts[0]
-    Write-Host "*** $site *** $parts *** sub $Subnet *** site $SiteName"
-    Install-Site-Subnet -VMName $Dc1Name -Session $Dc1Session -FullyQualifiedDomainName $domainca -Subnet $Subnet -SiteName $SiteName
-}
+
+Install-Site-Subnet -VMName $Dc1Name -Session $Dc1Session -FullyQualifiedDomainName $domainca -Subnet $LANnetworkcidr -SiteName $site
+Install-Site-Subnet -VMName $Dc2Name -Session $Dc2Session -FullyQualifiedDomainName $domainca -Subnet $LANnetworkcidr -SiteName $site
+
+
+
 
 
 # Close all remote powershell sessions
@@ -1090,8 +1057,8 @@ Write-host ""
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqNDsNcRd8XKu6FYTEmvBThXp
-# qT6gghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU73klOaP2LAPGcBn/uQyGpOmh
+# XBmgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -1212,28 +1179,28 @@ Write-host ""
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRjOIdb0yRqdu60z7v1tiAj
-# X4YXSTANBgkqhkiG9w0BAQEFAASCAQAkwp4y0l5ITMdSo/F4v3CbFOSI5fZnNtPZ
-# wOj7KMlE2hFousg1Uq3h7zarmjDYea5dH+Do5o3CiOvPsCulLjA1XllXEUnjvidA
-# qqOd/Q7b90vEis49hyvIHdhybNmTApP/BePH3khXDy1iM4U0s4KePADPb+ZNGo1q
-# xCH1VGlA1CaUnRN7cId+6GV/jcDnLcBch8NuYZ0uT2HVVu1+NiLV8GNrOBNEihqs
-# VqkLScBaM0U8D5IAZ0IYmDEQAQpPZZ3EguuuOtYfMXmlYI9XTValZ2UVr/ruQTDM
-# 0gccwkhW9myC1I1s8SQvnvBWCJ74sJruvlWzDmteI0r2GfKoYa82oYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSaHw1IKJwCuzHI4pbCwtIP
+# IpO/sDANBgkqhkiG9w0BAQEFAASCAQCZqxIwFlEuH4yuroVNERDr0dbSmdhfQfvP
+# W6kbX5mcWcefqr8XmFnDMlRDpKeHgnOxPw29yhhBI1Vgo582EbN6BSLsG+aR45Vf
+# T8NkarySIuM2Hze3cPALCAED0stzYYQXDRzTSn/J0RjIVaXiOmqaGhPtbpgoEpqk
+# 9e1OFiZjoU969nj/rdpzQszzp27ydRqw3a2kB/C+G0pEzv2sbVLVNJiQOUbnESNv
+# BmAr0RYTyBhu87/HE0X8HPj9R6IF5ulozA0QjdITMYfXLwxNm9dbbLRvVTNRbFb8
+# rPyxIcsIbQyc85pfVL1RKtMF/FrQxaEmOb9VifwkLsvzCpZ309m5oYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwNjA0Mzg0N1owLwYJKoZIhvcNAQkEMSIEIAFqpd/mr1Hs
-# 8oKsE5W5BdSlcqYvutMpuIlD1ox0cvt4MA0GCSqGSIb3DQEBAQUABIICAKZTCpit
-# 7UMFyWJU2k+x3qpBUjIqxWBD6R91yar1/DKqww0dwTQSAbsMeb9mZdcD0wHejJdx
-# UwBopZFezifHmgMLGtUZlwDQJn8/fgMI866UqgpHFxHdWEXlt4KFiyPKN3yVQHKn
-# I5e6s99hI2ZI68Mb2xJoqNfrVGw2LzToJdqrHown0nG2ZYHMETXKusyRtSjJF4AP
-# aYaXIYumIDV2B7bbHyYgiZIjX0yQ6WiyNJUWYBZ66AAse33DiKdO9uCRTy/QehFt
-# wtwUD8K79iXj8eRQhAcUXtHvoee2Rka8o/87oovwAd1eNlYF4jt672vn9ql4vGyF
-# nzoNfB5j2+s2kmPC67xmbVuUdn9WPY5d/77g6JqMjk6xV3ZBVRnuChKENA5iAeeL
-# FwMxAdKSMDwkRiNHnzZ5KmZdy04bRcItbYm2FCz0SckJpZ6Hh6eE7IIFgxoBi0TJ
-# i+cHIeZLqfoEEvXTvRA7jfrvOszpBwX1Gp1R+uD/K8JuKf+2YonGFHjcIA1dBBhf
-# 37HyuqFm/dYoKAqO4Z4Wm0e+vOM9KYwVcy+IZNQIGHUrpugz+w7HPo6FMh72fouB
-# 46O6FwYqmfvWguU1ZM7Ml0Y/P6ioaXhaWQcFJ21P37xMDtSiNUjyrRXET8KgCtT8
-# h/+doJ/2NM5RC7ezxG8xbF45Rtfy4R6lCpVO
+# hvcNAQkFMQ8XDTIzMDcwNzAzMzAxOVowLwYJKoZIhvcNAQkEMSIEIEsqU+MjTtTP
+# sY79x4J7LjKVbfJuTBAeyds1CnTJxBOSMA0GCSqGSIb3DQEBAQUABIICABo0Rd0L
+# J73LZkZD0UyRBlKxfw2VehM3m4yesIEL5/y0JKQ0jSh/J77RSiOKt9BRoOLzgm2V
+# 1WYW1TpurqIWCRHE/yCEx/Qv3+xN/XocjUGCeEhvD7jMfeNvHrnzoyXWf1ebbTGx
+# sqmSPTq56R8tj3tZKMMeuf1FU53SnxQBWy5yu+VMNnYKKTe2aAJqOOp/VQ6RJ8kg
+# 6yPRQkCEsXY7Q/dibbEr3out0ctMJY/Q7RaoIpmZSekGfU9LLuoqszxYf2cMx7Xv
+# 0hMnil8yVDTQDRn/vd6T/xhInAyx/8mIOpc46MvtEI+DBjLqhiXJbOr8sIDPwnBJ
+# SDISPJeMcI0ZzonkSqXc0CICDw5JyR63M/L9XPMd0Ka123e32e/rumK4RtcvnKoK
+# vyyq++Jcus7VVMfrXFeOv6ZjB0OzEgoCDTqA3KXOfLvHq/gnTF2AZ4x+RnUBBchd
+# i6PnimHSBRZB3fh8gCbzn/8Bb0612g/O2WL7HjuupWICk5TKb/njw48f60mkWUEw
+# VeRuClltO5KvzvygoedJ85grgI6esS4/dM2GOoP+u91EVQl58q9JF3LAsd68hT19
+# Aw2tUAB4D0XOUSIzZJEbjnByfOT0t9/9Pm7hvFqvhMgyzVuY4mHCZCaZS3zA/c6e
+# xQy6oKYo4JOS+YVyvFu2KUFnG9nR5ERgO0Dp
 # SIG # End signature block
