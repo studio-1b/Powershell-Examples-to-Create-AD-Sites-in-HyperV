@@ -12,6 +12,7 @@ if($arglen -lt 1) {
 
     exit 1
 }
+$limit=5
 
 function Create-Credential {
     param (
@@ -31,16 +32,17 @@ function Wait-For-Session {
         $logincred,
         $waitmessage
     )
-    Write-Host "trying to connect to $server"
+    $stop=$limit
+    Write-Host "trying to connect to $server                                     "
 
     $session=New-PSSession -VMName $server -credential $logincred
     while( -not $? ) {
-        Write-Host " ...connect to $server failed... $waitmessage ...trying again in 1sec"
-        Start-Sleep -Seconds 1;
-        $session=New-PSSession -VMName $server -credential $logincred
+        Write-Host "Moving on now...                                             "; 
+        return $null
     }
-    Write-Host "$server connected!!!" -ForegroundColor Black
+    Write-Host "$server connected!!!                                             " -ForegroundColor Black
 
+    $limit=60
     return $session
 }
 function ExtractIP {
@@ -174,6 +176,7 @@ function Show-Progress {
     $alllan = $gatewaylist | % {$(ExtractIP -cidr $_.split('=')[1]) }
     $allwan = $gatewaylist | % {$(ExtractIP -cidr $_.split('=')[2]) }
     foreach($lan in $gatewaylist) {
+        Write-Host "                                                                     "
         $lanargs=$lan -split "="
         # Vancouver=192.168.200.254/24=10.0.7.1/24=JoMaBoCh
 
@@ -201,10 +204,11 @@ function Show-Progress {
         Get-VM $VMName  2>$null 1>$null 
         Write-Host "[$?] host: Get-VM $VMName                                            " -ForegroundColor (IIf $? "Green" "Red")
 
-        Get-VM $VMName 2> $null
+        Get-VM $VMName 2>$null 1>$null
         if ($?) {
             $Session=Wait-For-Session -server $VMName -logincred $localcred -waitmessage "" 2> $null
         }
+        Write-Host "[$($Session -ne $null)] host: New-PSSession -VMName $VMName -credential $localcred     "  -ForegroundColor (IIf ($Session -ne $null) "Green" "Red")
         $rc=0
         if ($Session -ne $null) {
             $remoteargs=@($LANgatewayIP,$WANgatewayIP,$allwan,$alllan)
@@ -307,12 +311,12 @@ function Show-Progress {
                 return $code
 
             }  2>$null 1>$null
-            Write-Host "rc=$rc"
-            if($rc -eq $null) {$rc=0}
-            $tp=$rc.GetType().Name
-            if($tp -eq "Object[]") { $rc=$rc[-1] }
+            # Write-Host "rc=$rc"
+            #if($rc -eq $null) {$rc=0}
+            #$tp=$rc.GetType().Name
+            #if($tp -eq "Object[]") { $rc=$rc[-1] }
         }
-        Write-Host $rc
+        # Write-Host $rc
 
     }
 }
@@ -346,10 +350,13 @@ while ($true) {
                                   $CurrentTime.hours,
                                   $CurrentTime.minutes,
                                   $CurrentTime.seconds)) -nonewline
-    write-host ""
+    Write-Host "                                                                     "
     Show-Progress -all $all
-    write-host ""
+    Write-Host "                                                                     "
     write-host "##################################"
+    Write-Host "                                                                     "
+    Write-Host "                                                                     "
+    Write-Host "                                                                     "
 
     Start-Sleep -Seconds 5
     if ($Host.UI.RawUI.KeyAvailable -and ("q" -eq $Host.UI.RawUI.ReadKey("IncludeKeyUp,NoEcho").Character)) {
@@ -360,8 +367,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUopMY0NmtyGuHQmdqkLEJwTGo
-# Vs6gghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUu6cNl0Zo2cfO9duGqFAu/qJo
+# qjygghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -482,28 +489,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQY2xRgCEv9UW0T+ZIufA1n
-# ApiVvjANBgkqhkiG9w0BAQEFAASCAQCjV/Fe0wBuofxH1LnK3Z8+S3lBTEuJsupv
-# iQC9GGKEAro2gfpcMpmlULMbRFKtv5987rRt9t3zw7L4+B/qpRoxQYBriBajHonh
-# SZb3EVcQp6emjBLYAQpLvu4G9c6zXFCmUXhDehf15bpcp4jJ+HBKpUGB5q7/1QV2
-# TnpacYVdSfte/i6tLjWd9mhCl8nvCp2ctxPJx+lHvb8vOhKkWWAWZGlZKpXc8/jN
-# M3d0HW/zg00SWmqi3JNPEcULgNLuPuvXiGg1i2JtNctYjTzNt/xbdaGUuANN9MEL
-# mTJV2Q5zHu7ozCXpxKyDB3jhYA+3rOrXk0GqlqHen4YCy0lEoZP5oYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRF2jsiNZJmdpt8RNe4BUYN
+# VbDlVDANBgkqhkiG9w0BAQEFAASCAQBbcS9B3kBjfBVhmHck6XpTx7mzycxBprfD
+# Qzwui9eJMaspycH34/pcicTFZFzmXjLfAf8N6pMblqCtvM2Hi2bn023W6G1OKIEX
+# oaj3Ic5VNRJE/Wv/8Yj03J4PrhTvEB1F9kyvfUrp41vV6e3GBPTfujka3m3b8Sqr
+# Hi8SAWbcKEmZKi+5lB4MTDFLl27fTJGN0BilrYN9pLVQhjxBuJtMtPZPnE9/n8ki
+# NtkbYpH9VMa8JRfwxXAihOK5E7TilF8P+zYZBlMqVA5fdLuMt+bkFAH3WxOfJGel
+# XWxMnRP7vdXe7wE13lM00kvZJxc+bvC1YyDYlewpoh20A2lp4WhCoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwODA1NTcyOFowLwYJKoZIhvcNAQkEMSIEIAQVfP/7IqAS
-# ErQk4RW4fvNpyktYFq0BpWnPDSm01vmVMA0GCSqGSIb3DQEBAQUABIICACyPbk1C
-# lTt03ucbvogh+0jkOjLi2MIz5JH/7etWwxv49RDfEMTvwzXOx5zzRmw474pAMc/u
-# 46yVidcXF8ZZi3H65Jt5ccNJfvCyPx8+J2DABTskympxytBxRSfbu7stdZYWjuhT
-# DGksIyGP4daV0JXG0Xp/vusspQaPrpDy93v73XIcaXW5V5LDWG3VsAvRa842YcZh
-# xLJ93wEI2aXyNA5BeCsaMx5qQMXGNh7XskHWwxQ/5yw0s+noGtN4psfNlTgbYCtz
-# x9l1puCpI8ExjNB0M44k5keGdI6AIGPb1NOpjAkjCmooxhpzcxApxnezKw+Gx9aE
-# Sh8Vwpe93APYZq7YTLp5fDj1zwpLKsYs4IRQsKaJZhtx2Tgxtp4cIU5wnQfRogbs
-# 1B2fSkDnjPAIKK7rF97A4jVG+WDFJGivF0ao/ByG3hGwVFC92lCq04Hx4GWGPPMN
-# x8mrquxAVTA+hhGjHdptumVoiSY6WyQjglO9ZaM2PChz9ftKSBF8nLlq305MkVfV
-# t01HKQ71Y1mmAJoc+T5B3viT9wLg9SNP65yeR/dXNAxMCGKJhoenDUCsGHNxd4PR
-# HG708VUNzDSJJ6Y1XBVVifyL5vHqmlznMJnPG8L66IydD1Ubd7vJMMfOo9UQrVRO
-# pHN/0wBkYFwPd9QhGKn1PDQMwWH3VV/YFfPV
+# hvcNAQkFMQ8XDTIzMDcwODE5NTQzMFowLwYJKoZIhvcNAQkEMSIEIHkxWN4Hdg6H
+# Ht8FlXBu7WsmaT/DTBSSCfxhRJvzGr92MA0GCSqGSIb3DQEBAQUABIICACZszwT2
+# tfrbaZYc15jfVoXZOpfCmtx+f4IrMib0G9pp9yQwMdw61fMARxW9rMBVmIAZGnvN
+# 4GHgjy9ROV4OnBG2bR8tIrYiU8fYo/sADnX8CUCj5sksc5g7+8O0C4tN6UArbjlJ
+# AuwJS7OCX/IUX7NYhg3qVyL9C7NT2qNKCkt2jXOdExnprXpi79kVHWK6tTRNH7/X
+# rbJo7hbH1DWsjVBRWvWYGve6NYgFnjMHC7nCLH8Y5iWrit+IPXrQXH6RhAZ7lq+n
+# u0plflwfPMynVu/41YcnmwlkYB2ioym2h56Gxtb6CAVn20HF5tfeK8r6edjx1e2d
+# hxCn6xLAqm2NEZGwte0me6tSD86XNj5ndHGd2mZG4QW1bT2M9GEkxhIRyknUkNF1
+# CNv1zbcELhAJLBRJpkpnjkcU1X+E7jWLvrCKxGIGMEqq+qbwYrWTMYq7g/pzUUjj
+# GzH8B27WZZOHUogFk8lu4+hGtsMfyMBGf/Xw3aApIGtOJDHOBHsQaeeyvfmVWEjk
+# pWfxt7jKx83hwg64kDtsW/ZVU6IRvLfQHss/rkyTOOa1ZwP4X4mYdT71c7aCuHfG
+# dR5bWlwjyAEfp3ThfMCizcZDI9/Nk8+esnFlQ+7qJCJ1mD5k6w2xHxMt+m1sRsFw
+# tAta9/dWaI3DSTuSTr8VcR/gzGVeyMq3JP7N
 # SIG # End signature block
