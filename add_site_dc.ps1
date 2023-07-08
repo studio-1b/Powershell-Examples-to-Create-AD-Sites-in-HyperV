@@ -862,7 +862,7 @@ function Test-Installation {
             Get-ADReplicationSubnet -Identity "$lannetwork2/24"
             Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $lannetwork2/24"   -ForegroundColor $(iif $? "Green" "Red") 
 
-            get-ADReplicationSiteLink -filter "Name -eq 'Default-to-$sitename'" | findstr "Default-to-$sitename"
+            get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" | findstr "default-to-$sitename"
             Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'Default-to-$sitename' | findstr Default-to-$sitename"   -ForegroundColor $(iif $? "Green" "Red") 
         }
     }
@@ -989,7 +989,6 @@ Add-AD-on-Guest -Session $Dc1Session -DomainName $domain -DomainPlaintextPasswor
 Start-Sleep -Seconds 5
 $domaincred= Create-Credential -Resource $domain -Username "Administrator" -PlaintextPassword $plaintext
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
-
 Install-DNS-Reverse-Zone -VMName $Dc1Name -Session $Dc1Session -LANsubnetWithCIDR $lannetworkcidr
 
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
@@ -1025,9 +1024,9 @@ $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmes
 Install-DHCP-Failover -VMName $Dc1Name -Session $Dc1Session -FullyQualifiedDomainName $domainca -DhcpIP $Dc2Name -ScopeID $lannetwork
 # Write-Warning "DHCP failover needs to be configured manually!!!"
 
-
+$Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
 Install-Site-Subnet -VMName $Dc1Name -Session $Dc1Session -FullyQualifiedDomainName $domainca -Subnet $LANnetworkcidr -SiteName $site
-Install-Site-Subnet -VMName $Dc2Name -Session $Dc2Session -FullyQualifiedDomainName $domainca -Subnet $LANnetworkcidr -SiteName $site
+#Install-Site-Subnet -VMName $Dc2Name -Session $Dc2Session -FullyQualifiedDomainName $domainca -Subnet $LANnetworkcidr -SiteName $site
 
 
 
@@ -1057,8 +1056,8 @@ Write-host ""
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU73klOaP2LAPGcBn/uQyGpOmh
-# XBmgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUTlBUY2xuebFtAVdyU5xqv/fU
+# 9higghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -1179,28 +1178,28 @@ Write-host ""
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSaHw1IKJwCuzHI4pbCwtIP
-# IpO/sDANBgkqhkiG9w0BAQEFAASCAQCZqxIwFlEuH4yuroVNERDr0dbSmdhfQfvP
-# W6kbX5mcWcefqr8XmFnDMlRDpKeHgnOxPw29yhhBI1Vgo582EbN6BSLsG+aR45Vf
-# T8NkarySIuM2Hze3cPALCAED0stzYYQXDRzTSn/J0RjIVaXiOmqaGhPtbpgoEpqk
-# 9e1OFiZjoU969nj/rdpzQszzp27ydRqw3a2kB/C+G0pEzv2sbVLVNJiQOUbnESNv
-# BmAr0RYTyBhu87/HE0X8HPj9R6IF5ulozA0QjdITMYfXLwxNm9dbbLRvVTNRbFb8
-# rPyxIcsIbQyc85pfVL1RKtMF/FrQxaEmOb9VifwkLsvzCpZ309m5oYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRj+yCQM8OvIAa/IF9TZJ2g
+# MgnwdzANBgkqhkiG9w0BAQEFAASCAQCtwcxpWqDetB3Wazg6jq4cRPi0gyCalyxB
+# enyDaQGYGmgnLTcQnDoK+CQyPcndd/k6yfZtdokQ/fTVEAFXUAxLgg64D0Ufapvr
+# IMitAa8pjF6ft6jfXYG6N0QhWMnLibkfIGl6OJzyCy1xg0lYMCXKFIrVEdcF0dEf
+# rqoqMjF4jYXr8bIU6iHYNiMoOV9ZJvn/Tbdn9yc8+DoXVaD8FXlx7fHVBowO4/RD
+# x3x0ciIogVJnm9HaraBGnxPwQUy54FI4QWKnEwI+w1iv9wtB/pPzmIxWv2pe+JY/
+# WmeeGs0VSgwGuKwfb/ekclefk3ad28mmeVosi+/gMaRw8ZRNiid2oYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwNzIwMjczOFowLwYJKoZIhvcNAQkEMSIEIEsqU+MjTtTP
-# sY79x4J7LjKVbfJuTBAeyds1CnTJxBOSMA0GCSqGSIb3DQEBAQUABIICAFosSOGC
-# bzgF2zhB4yc5wZV8luFg1k2xIkSEh3f49nGuEGdrJywjaniSrnKsIsAfh9SCPk0O
-# Be9iUBvr5UtU0hjZ9vASGjwnqx2hhzfqz9PX78jB99K03TwwII8USgTlL8ZkrjBq
-# qNr3m62IcIH8P42Ie8LSqr8BFqC81HibZ1HDGjQgIAJMsaywe7gEyP0k/fi2bzCD
-# JgIkxDBjzSfNLndnKzZlnQsqadM2K6RrZNcgLJTsjGOibkeSLJI+q+eUQVPfLAyn
-# HfFkHa8Z/fUqvgVJGvpnIjTmmtGM6pyYKMXrpTeJM6CZB0/E+tht17H5XgP6PAca
-# EjyhWLBX/0WZDWKAZznRJgWjs2I7K5IZb+lMVF6uOqRPbBvHYq+Evo7ILPPOZZDg
-# 1Sy+YgAHO7R1HelOtPOEzjhtsXXTGWbr13eUJwn2Mv1d9uV/iCAlfojsDuqHeIHQ
-# snq9EDrNv2jaj5mK8nSZKTYT8EGLkQ9ckos/XE157NJObFyD3ePbmhJWc6dEVo2y
-# 9XI+KiWXMBNq2tH4TVCPeKujG3HkbjKwrrLmykyJ+RaqDizc5JGC17eD6XlK6DUn
-# KrNfoXgfhyee5AVlrxq91T1ahETeVPj9N/6WHFb8TXJRov2X/8J8vMm0d1IUkHGC
-# Hf9IkYZejT3x9fvhnaxY4m7mIW3mVwRA1EmO
+# hvcNAQkFMQ8XDTIzMDcwODA1NTcyN1owLwYJKoZIhvcNAQkEMSIEINNUZ3Uz5dxn
+# IK4cUGclcTAYLApDFg/Oj2+E1zqW9FFpMA0GCSqGSIb3DQEBAQUABIICAJZMBTI8
+# 4bH6dBGeOtqBZzvNP3Hh39rZDFf8U2qEQNaRrf7w7nyx6eM8S2C0Jz3ARMfGPL9M
+# r65ADfHwL3Nf45uBUws34yzEXo+cetuJ8R/9HSKVWT9sLh6tc4JPjW+zxSFI4pUF
+# GczcHzstFS0BiHJnWaVfWInrG4vMsqXJt84mZVBni2+/qFeGZ6ZyoKwFs3DMPYan
+# UvjHjGoxl3SqxbAZY+d2CYghy3Qdg6Llu7q0dAW3kaYNq9/0Cl7vskvcV2BPrxyM
+# xFZsk5L50/1s1SvL7CD27CZWTptsGfoyjnXa4DKggvSsuunIjqsS57KetQ2pzvII
+# z59qoChT2nyd6afsFhW1LF2KvtbenWUByLw1x8oKIBurH2/BS3ShNGW82MLg6fwQ
+# PbBsI45AvULKTpIBPLJ2boG8Ohshao7TifGKd+XZ30mbcMyMsjl6GOs+Xwvrd1CB
+# UZJqKKQ7xW9JJ68gVTmDQVq6KUnGqd8K9WBGS8Q0DG31AMlQ51LhSOKgTf2LXfkq
+# 2Jut52+TR5JuiEty+0NB6Z+kpxDt8QzP7vD0jDvUKcks3YSHra0jDmu3au6Mfz2q
+# gT0J13STwj2aGt82cLHlQ+aa4JF6ptz7lvQP385y8Pl6RNydKfGnJT7Aumolg6pw
+# cUFu4rqzmSSqhgJJcH+RgpTr9f2Aw+DQyB2q
 # SIG # End signature block
