@@ -34,13 +34,13 @@ function Wait-For-Session {
         $waitmessage
     )
     $stop=$limit
-    Write-Host "trying to connect to $server"
+    Write-Host "trying to connect to $server                                                "
 
     $session=New-PSSession -VMName $server -credential $logincred  2>$null
     if( -not $? ) { $session=New-PSSession -VMName $server -credential $localcred 2>$null }
     while( -not $? ) {
         $stop=$stop-1
-        if($stop -le 0) {Write-Host "Moving on...";return $null}
+        if($stop -le 0) {Write-Host "Moving on...                                       ";return $null}
 
         # Write-Host " ...connect to $server failed... $waitmessage ...trying again in 1sec"
         Write-Host "." -NoNewline
@@ -48,7 +48,7 @@ function Wait-For-Session {
         $session=New-PSSession -VMName $server -credential $logincred  2>$null
         if( -not $? ) { $session=New-PSSession -VMName $server -credential $localcred  2>$null }
     }
-    Write-Host "$server connected!!!" -ForegroundColor Black
+    Write-Host "$server connected!!!                                                " -ForegroundColor Black
 
     $limit=60
 
@@ -198,7 +198,7 @@ function Test-Installation {
 
             try{get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null  | findstr "default-to-$sitename"  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
-        }
+        } 2>$null
     }
 
 
@@ -268,7 +268,7 @@ function Test-Installation {
 
             try{get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null  | findstr "default-to-$sitename"   2>$null 1>$null} catch {}
             Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'Default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
-        }
+        } 2>$null
     }
 
 
@@ -279,9 +279,9 @@ function Test-Installation {
     if($Dc1Session -ne $null) {
         $dhcpup=Invoke-Command -Session $Dc1Session -ArgumentList $lannetwork -ScriptBlock {
             $lannetwork2=$args[0]
-            Get-DhcpServerv4Scope $lannetwork2    2>$null 1>$null
+            try{Get-DhcpServerv4Scope $lannetwork2    2>$null 1>$null}catch{}
             return $?
-        }
+        } 2>$null
     }
     if($dhcpup) {
         try {
@@ -371,8 +371,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUeWXPmabdERiDJE1xJ+yqpUU2
-# VzagghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUadNB9djOonx93qfRXjkA8nep
+# hF+gghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -493,28 +493,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT/IaTB5S6FZXisDoEh+/i7
-# 33mktDANBgkqhkiG9w0BAQEFAASCAQCesZGVg8Tki7E1vXebM0859tREtryMJOnZ
-# AKI7qKXpHSjH0IljKi5SFs0XaSUXW7HXh0EooWZzGnq6W2ON/+cHyA2GLiL4sVJK
-# vOsZkbckw2+0OQ4Xv7449gLyJyenDVD3Fkqfm/dk1G/OeiadGatF7RSV2Ek9krvt
-# x5FRwlJaAK0LELg0+IRxSc99U4Y9WQ5wSLy7cemKIz0SSKK6K2wzcEubJZdhxgb9
-# gOEWrPZDXUNZDyjPV1jiMKYekIVwrlFc/EPVdcfDZ53S9Vyk28rxlwhLqzStHY+U
-# ywZFODN3NSf/T+dYiUJUoBPS+un4iUTfRcz+YWgzQRXm2wqYISKEoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTVgf5CthBkZqTnAVLqqjnm
+# 9NHv9jANBgkqhkiG9w0BAQEFAASCAQAsmd1YNDPKQzlpIDwpVnqxnJ4ekJsI+sQU
+# xdM1g/YG+OUXQA8wkaIlQ2G0/vQHHXri0IUDWYjku2aIpqiSjxk5dr+YhR9RRIph
+# U6j1Ol+LsPhKNcm8dKoiJATCbH16NWIos0y8DCIJWLH8nHuCigsirZg5nNV4pYMc
+# m8BhtM27pAiRyNGIxFncNiUi3idOYDwLGWbQHIpxEn7AKsRK94/eISj78qdTZTL1
+# EHSsLASbRCjjjJmvQS2SgCwvtqrPwGOQrQ45R3oDBCVxRqmhIc6+ESbZhn2UiLjq
+# hYQAlaMhAtY5a2nGz6ywf9Yx1Owfl7YmqQB1IgOsAxOqFCxWp/32oYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcxMDA3MTU0MFowLwYJKoZIhvcNAQkEMSIEIB2Oj9MBgOEl
-# AhXodUnyUgPO2sZT4kBCBydtozgOx4dIMA0GCSqGSIb3DQEBAQUABIICAIvvqfe3
-# FYHBjGZgdCYkdfu9WV4vFFT51k0VtGz9r7m5ql9JlwHXa79m+32JWrj1L1g128zM
-# j/JctARaPO+6yjTl4sp+pLTDH8enemP5tGAK7vcSqWk6jFU6LehOZv1JGClCOsLh
-# DRP0PE1B4NAp5eIjfCQ9viAalJCvwU7XC/ChkPEHh6yJ5KZF0f9hM0Xcc8FzMr/B
-# qHO0ZZ9SqYblcq3qN0q6d11KQ56uMAzifWOg+inFeRwlrt+a4YEcTrQ7FbwkKWMt
-# t/KCpzbC0dDZ8XyXQur8O2UHClT9y6EQZIj9uNIEolhjn6BCJG2rgB2UxH8kpDEU
-# AP0eil24MBj56wKwOQ04PxSA8lg5NkskxucIC3t5YCEUGAIB72p1W0ivt/QcH7Yc
-# daICL2Yw6L4QS6PEf5PZ5RXx58X9NgwxzpZyIeXdj+RpVmnndSO9G3IgjCA9h1Ac
-# LFJZiBQupcpwupOr2fp9RqImjL6b9LB01zHHB/SLjmfXHbeRfOEqKuMKkMdeMFK7
-# Ch4Qsa5VYtZfigWh1SVD9j1zda107oBFFa8iR3JsCZiqqiRZITDkpSTc6BxOBCxq
-# VMN5f+k9MxHFs8biFJ2YYitm2jkyBa/h9XsJJE6n2TMAc+9hjrcnGUoq1yUSC8ys
-# OYEckNIDSc2L9UY6M/sXtxDnREgvlQlQ2XP+
+# hvcNAQkFMQ8XDTIzMDcxMDA4NTgyMVowLwYJKoZIhvcNAQkEMSIEIAEJWE7Mc2jD
+# 29uICN1rQZXShz1DXggMVZeKAECETmSqMA0GCSqGSIb3DQEBAQUABIICAI+qlSXZ
+# tT8CJiBnn5dxUsFduIBHuesofJlPP7zKxKUAWg+Z1T+QOYxxC5fw+ckzuo5YzcNz
+# xPU0D9mnoOO9fUmuMt5Liv945JzzKP4fC8TXwWK06g58M4jVXgyEykGwo4QRgxmW
+# oSCKN8r8HqxB48y7dzebVtVYQkzom2n2irlDmg0exXw9+07KHvO9Inm8NYmiwopU
+# kuyg7RNLkT86/+nTjc8GpT2pn7OXi7dNPG0h0Y0bJYu++qNQDie7mhqYrQ22ZoDT
+# gOJz/1tzETlVkeagP1BrPlZdZVzbBCF37EXIvzZDYyo8+MM8qOv5wlTxrQoxB4ST
+# eN6Zrdo2wVqIzfCBBMAJnNRbPC5Ruw6GMPXW6UBLvoh6EvR2Eht83aMpmuN+iBPp
+# hdDPtSSxN57QHNrLb+ietq/BX/L/jOkRS/Xfl+9ByIw+YlrV1e8KaTq/HxXaB5p5
+# z0A8pjoIXhiSAv8lfzzjxWy/GKrfh3CglyRG4ap1j5YVYrAitCtzF//NWlzVrSDM
+# 6PRwZ2KkwdGo//qReo5Ra22hPVYOcBbhMhbTGFWoYCJEEIucmJLhZDzrN9WmXMMR
+# G8BWTtsmQVyqJAoxCpkT6JZbnJbbOvsKtiA8S3su6a5jALhRzyNOnUDQaMtj5v50
+# GBCLAcii4qtk1+iT1vNEPNgUfWHWz9rA5N64
 # SIG # End signature block

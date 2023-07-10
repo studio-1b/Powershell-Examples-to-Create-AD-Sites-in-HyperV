@@ -224,10 +224,10 @@ function Start-AD-on-Guest {
         $recoverypassword = ConvertTo-SecureString $PlaintextRecoveryPassword -AsPlainText -Force
         Install-ADDSForest -CreateDnsDelegation:$false -DatabasePath C:\Windows\NTDS -DomainMode WinThreshold -DomainName $FullyQualifiedDomainName -DomainNetbiosName $DomainName -ForestMode WinThreshold -InstallDns:$true -LogPath C:\Windows\NTDS -NoRebootOnCompletion:$true -SafeModeAdministratorPassword $recoverypassword -SysvolPath C:\Windows\SYSVOL -Force:$true
         
-        New-ADUser admin -AccountPassword $recoverypassword -PasswordNeverExpires $true
-        Add-ADGroupMember -Identity "Enterprise Admins" -Members admin
-        Add-ADGroupMember -Identity "Domain Admins" -Members admin
-        Write-Host "user[admin] created" -ForegroundColor Green
+        #New-ADUser admin -AccountPassword $recoverypassword -PasswordNeverExpires $true
+        #Add-ADGroupMember -Identity "Enterprise Admins" -Members admin
+        #Add-ADGroupMember -Identity "Domain Admins" -Members admin
+        #Write-Host "user[admin] created" -ForegroundColor Green
         
         Restart-Computer -Force
         return $true
@@ -328,7 +328,7 @@ function Add-Admin-User {
     Write-Host "Creating new user [admin] in [$DomainName] " -ForegroundColor Yellow
 
     $DCName=$($session.ComputerName)    
-    $domaincred= Create-Credential -Resource $DomainName -Username "Administrator" -PlaintextPassword $DomainPlaintextPassword
+    # $domaincred= Create-Credential -Resource $DomainName -Username "Administrator" -PlaintextPassword $DomainPlaintextPassword
     ###  $Session=Wait-For-Session -server $DCName -logincred $domaincred -waitmessage "..."
 
     $ArgumentList=$DCName,$DomainName,$DomainPlaintextPassword
@@ -336,17 +336,21 @@ function Add-Admin-User {
         $itself=$args[0]
         $DomainName=$args[1]
         $DomainPlaintextPassword=$args[2]
+        #Write-Host $args
 
         Get-ADUser admin         
         if($?) {Write-Host "[admin]exists already";return $true}
 
         Write-Host "using [$DomainPlaintextPassword] as password for admin"
         $password = ConvertTo-SecureString $DomainPlaintextPassword -AsPlainText -Force
-        Write-Host "Encrypted[$password]"
-        New-ADUser admin -AccountPassword $password -PasswordNeverExpires $true =Enabled $true
+        New-ADUser admin -AccountPassword $password -PasswordNeverExpires $true -Enabled $true
+        Write-Host "$?"
         Add-ADGroupMember -Identity "Enterprise Admins" -Members admin
+        Write-Host "$?"
         Add-ADGroupMember -Identity "Domain Admins" -Members admin
+        Write-Host "$?"
         Enable-ADAccount -Identity "admin"
+        Write-Host "$?"
         Write-Host "user[admin] created" -ForegroundColor Green
         
         return $true
@@ -833,13 +837,13 @@ function Test-Installation {
             ping -n 1 8.8.8.8
             Write-Host "[$?] guest: ping 8.8.8.8"  -ForegroundColor $(iif $? "Green" "Red") 
 
-            foreach($site2 in $sites2) {
-                $part2=$site2 -split "="
-                $othergateway=$part2[1].replace(".0/",".254/")
-                $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-                ping -n 1 $othergateway 2>$null 1>$null
-                Write-Host "[$?] guest: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
-            }
+            #foreach($site2 in $sites2) {
+            #    $part2=$site2 -split "="
+            #    $othergateway=$part2[1].replace(".0/",".254/")
+            #    $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
+            #    ping -n 1 $othergateway 2>$null 1>$null
+            #    Write-Host "[$?] guest: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
+            #}
 
             Resolve-DNSName  $DC1Name2
             Write-Host "[$?] guest: Resolve-DNSName  $DC1Name2"                                                                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
@@ -906,15 +910,6 @@ function Test-Installation {
 
     ping -n 1 $Dc2IP 2>$null 1>$null
     Write-Host "[$?] host: ping -n 1 $Dc2IP"     -ForegroundColor $(iif $? "Green" "Red") 
-
-    foreach($s in $sites) {
-        $part=$s -split "="
-        $othergateway=$part[1].replace(".0/",".254/")
-        $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-        ping -n 1 $othergateway 2>$null 1>$null
-        Write-Host "[$?] host: ping $othergateway"  -ForegroundColor $(iif $? "Green" "Red") 
-    }
-
 
     ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
     # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
@@ -1022,8 +1017,8 @@ Start-AD-on-Guest -Session $Dc1Session -DomainName $domain -PlaintextRecoveryPas
 Start-Sleep -Seconds 5
 $domaincred= Create-Credential -Resource $domain -Username "Administrator" -PlaintextPassword $plaintext
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
-Write-host "Password in plaintext [$plaintext]"
-Add-Admin-User -Session $Dc1Session -DomainName $domain -$DomainPlaintextPassword $plaintext
+#Write-host "Password in plaintext [$plaintext]"
+Add-Admin-User -Session $Dc1Session -DomainName $domain -DomainPlaintextPassword $plaintext
 Install-DNS-Reverse-Zone -VMName $Dc1Name -Session $Dc1Session -LANsubnetWithCIDR $lannetworkcidr
 
 $Dc1Session=   Wait-For-Session -server $Dc1Name -logincred $domaincred -waitmessage "..."
@@ -1093,8 +1088,8 @@ Write-host ""
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUWnXUHPdhKmnRCtaEGivApKR3
-# 0IKgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqTlypC+puyfQIeaUWvHCQYm6
+# E7egghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -1215,28 +1210,28 @@ Write-host ""
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTuq4WFACU2uCl/uCbQbFjl
-# vqWdZTANBgkqhkiG9w0BAQEFAASCAQCe7KePE8FdKvF5agUzG8Bva6ikjWU0+Z3Q
-# kGWrv2cCrVWwne88uLYpF+kEOdJ2vHCi1IZjY0E3Usuv0aatwln3w1Dd8WUuknkc
-# QZ1c4QCa42n5aMkptUtxy+Hy64yom/U9t0zddPecO7KdtykBUv4Zy60VkrckhZ8g
-# wXs+30ReuKzJnoVi0AHIaSMJf1nr5wm4srwC6gLVK0bPNeP7GxTmMl3PT9mVZggD
-# 6C8SXWNWkZAumVaoCQXd47tZTkIMAjE1V/3oD+BHVdMCeQKrI7CtO7DJnL4snVs5
-# CHqkE8AlZcHoaJ8pzhlhiAb3g8BSODIk64lIWVSLCRNeHmBartJ4oYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTBLNB1wvbVz+cwmqFU1Red
+# MBvUOzANBgkqhkiG9w0BAQEFAASCAQAnIz7rQghlD01X7nG+AkjRzy2KrM6hG9AI
+# oWA0RkvfjcLRiLsV74ObRPG+CedkwT6UugRo3x24H3TmE+FzrTE8P8HZ97A62tfT
+# 1h5J0lGUcgUFQw8BuaobaYIMTf5EsxecitAGOJ4PQYl89ItJSACxvYUB+C7fhKiY
+# w5wP3tH10ZY23QIwts0yI5L7kbtLef0zkUU2ndAzOf5PjXxfz9R15GXwWSj81dj9
+# MGgUkhy+UAhQpOqfC9F4Yj654CQ8nQbWRtHCDguFonovNUcXAkJCZQtZhjdnmzC3
+# lBhBN0xHWk60+V3CA+9p8TG7bLDnaEcR/vkzsjyJFJDzXsPuQMmQoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcxMDA3MTU0MFowLwYJKoZIhvcNAQkEMSIEICpM/1YzTyfB
-# pc2achyExULHANm3js84hpXWWvnSRnfAMA0GCSqGSIb3DQEBAQUABIICAEFfZBuP
-# Kl+4Rsg22pOhVTW1ubezUCc39yn8bBBKpqs1WwfALA9lzbGP+xWw8R9t5OH+fdlh
-# r+HM1bjRQsX3RDa/GvQe/HLIQ1SRCS1xA0O1kUVcPN44oObcfLgS8tgE5ItPYkeq
-# kqDYzQt02X7v4sTrdU1pBAgoCooV5EqLCL6+d2zhWy4V/U+eYAZg/7HhSlzRvMEa
-# WaMc2Gz/c28KO30oIlS75y4FEJdre+Uyd0RZwynSbGIF6Li8GpV7yqBPTpxbn7Wf
-# WdV5I7MW8hxHZAJZfTFncacFIyjmi2Gr87ZeiJy7IYUr7xbcHxgvSOspSO4oSIBx
-# F1jfyZBxNOVeod0sO/iM2MKkCFtiNz2TCYEmS5EtoZqdGK44DwxY+4VSNszeTbDP
-# REo1z95cjX5QVsTKtJJPYwf16QckHilxrIWB6pXdpkjZsMXrDKU+exHgh1STEOgd
-# BZ9aMOea/qKEqm1nOEwyw8qn4dNl7Spq+43yDVnEQA2RLRbQkULzmruEOjL1tGtJ
-# HaAdDoILk9kSnI0aeEb+2iacistdPaM3ScPIZi9bOWWzlSvR36vAXLUrDBRqhZi9
-# X5D6g52Y/MhlTi0kABJ8Ygjnc6yXoXmQBXdf8MYpLFnJjVp+JLCl0qm8y+TkupRn
-# dy6TZuQgHz+zFP9/kH3yeq2I3X9tefHIM4s2
+# hvcNAQkFMQ8XDTIzMDcxMDA4NTgyMFowLwYJKoZIhvcNAQkEMSIEIL8NpAoSDpaq
+# PWTgpO4OzRtyUGdqlCI20nUCb4XdLHLUMA0GCSqGSIb3DQEBAQUABIICADvk1itx
+# D/ZMUDHmLOj4xWcXLLUld/plBjLc4oaLh+jW+RORgXDqrY74dRxT2gRZHvSdTn1m
+# s/Jh+EkHlHFPVIS8pliNe2Tck3eN+AChQ1QdwK0k7r0exsduDTHVUc5HKtuaHJtj
+# yYmLMLZd2NV0cOT4w9e9p8AtuSV9B3xe/q4gUKlK9fagi9TQYFRZhByXH8OWVOj/
+# XqNEl8g0h31hWQWWcuRbA0YHGuj1x4h6syhyxG+jj4P6TEUoLmsBjj9PVWmj9K7D
+# KJwLLkgufOftAQ/nXS6hGj6fL2THHvmt4zACYBVnCglzih9dJiB+Z2ksIR6VIo5+
+# AQ0z9ndHLy+5Oe+cT8iv9FvEsahdE2oz+n66HuWmHIWawBfYaUraugszRe+kV6eH
+# O0qPkPhQeZBy3oRrzzy+YM0tGUFLoqVyRUjlj2/H9Lwb7aUZu0e6GsoyUjxvoU2r
+# X5nh12U+yLgmqGawdZK8R0RBmm3yS+QlkPJQpXL7THFBsJsGDArgSOtF4nPKMtjv
+# fM3Iin3oznlCHgiusxmWZsgmdHIZ34K7ssNCa0up0z2T/5lAQTrovFOlOjup9c4q
+# K1V/s3U582kUgKJtn+i7GzunOIoqfaHvoJgSfLzCnbbuHdtmIt3K125xZmM4hP7q
+# Zj/G/oNmQ8/MWKHK6u/fUrkT1/vcgq8dqCQi
 # SIG # End signature block

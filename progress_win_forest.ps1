@@ -193,7 +193,7 @@ function Test-Installation {
                 try{get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null | findstr "default-to-$sitename" 2>$null 1>$null} catch {}
                 Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
             }
-        }
+        } 2>$null
     }
 
 
@@ -218,16 +218,16 @@ function Test-Installation {
             $Dc1IP2=$args[5]
             $Dc2IP2=$args[6]
 
-            Get-ADDomainController 2>$null 1>$null
+            try {Get-ADDomainController 2>$null 1>$null}catch{}
             Write-Host "[$?] guest: Get-ADDomainController (Is AD software installed?)               "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-ADDomainController $DC2Name2 2>$null 1>$null
+            try {Get-ADDomainController $DC2Name2 2>$null 1>$null}catch{}
             Write-Host "[$?] guest: Get-ADDomainController $DC2Name2                                 "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-DhcpServerv4Failover -ComputerName "$Dc2Name2" -Name "$lannetwork2-failover" 2>$null 1>$null
+            try {Get-DhcpServerv4Failover -ComputerName "$Dc2Name2" -Name "$lannetwork2-failover" 2>$null 1>$null}catch{}
             Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc2Name2' -Name '$lannetwork2'   "   -ForegroundColor $(iif $? "Green" "Red") 
 
-        }
+        } 2>$null
     }
 
 
@@ -237,7 +237,7 @@ function Test-Installation {
     if($Dc1Session -ne $null) {
         $dhcpup=Invoke-Command -Session $Dc1Session -ArgumentList $lannetwork -ScriptBlock {
             $lannetwork2=$args[0]
-            Get-DhcpServerv4Scope $lannetwork2    2>$null 1>$null
+            try {Get-DhcpServerv4Scope $lannetwork2    2>$null 1>$null} catch {}
             return $?
         }
     }
@@ -330,8 +330,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUknmQducdjAxD7qa43zf2catX
-# CxmgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJXTVgf8OaB6PSmKRdINTfe09
+# r6qgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -452,28 +452,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ4Q5wWQX8dYvtiApycWYjY
-# xrFhiTANBgkqhkiG9w0BAQEFAASCAQCU9D4IIx8Lh4xqCko8SjleUit3a1hIf7yh
-# RElCC4l4I33Ao8KW5O0jUl6eBuY5NCFi5Np6PA7jI6V7Uo5Ji8437HeKKe70MhTv
-# unJNx2UWRRebe6yb5sONntxa2XUOM1/rj23C02PFLTJE86F2AXZmMcYRURWz94nQ
-# MDxmM2HEBNm1p3er4QSg3UC76BxkaFMEM13bKdM9SiquXfSk96rvK37190dpDKRG
-# eI4XbpJpx+vJXdsfHpqXcBEMzJCFi/lxd0MnKkLlfGMGOCyo5GHes4MTqs/blx+d
-# dwI5SbSlwNedZ+u5h/k9X+a9NNHZl0cYYg7peDf7jRT2TAomHIaGoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTYl23vKWuZBtn9BPWUKzSv
+# 09jRTjANBgkqhkiG9w0BAQEFAASCAQAq0hVvluBT4o2TO/VWEqxqnZvj72roujgh
+# kEXH3mqAeOoX7Uf9O/lxLeWQXtWZ84Zpye0OAnmuUOpXrrWqwRZXHz6iKZ+yP723
+# Lcr607sgUlBu8hhi7/ePpadeRKzegapY/EklTPfVxSyFjCRcyPTWHqOO+VqfeTSV
+# lbPZGDtrdJGaXi1o1QqxEX6lzecJp/G9xA3bmKt10ha+QxQUznX5i18nZACx/BLS
+# GDfBTIdjHdYnGsTVjPMrtg8epouAEvcGMEPaCcgNAXED33wFWCAzs1mDq8VGRXzI
+# nCXhNWKyvGhOLKWL8VcNiY+S8lI8gmBxOcOyjTyDxSJriHOJuFVyoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcxMDA3MTU0MFowLwYJKoZIhvcNAQkEMSIEIEsxxBLm/2BF
-# J1ZV/uqD4BoEzRgEFvqm2Gm81t+N3GNEMA0GCSqGSIb3DQEBAQUABIICAGdWfJsJ
-# vvfnrk2ctxzFySEI3wCYGzeAdx4jyN50u7aUND/tDQRyLQX5HgOVqiKZs+NMZ4ml
-# 6HiFVo/ub343ywMN2DY6x5vHR8DLPyNTdO+4wpuBllk7tIHrUna/vxu79uRsQGSg
-# XCXDrW0g6OzpcLdJIOizOzW6c6Y9N7XzN76aYHnFe3yFGFyrOAX14aJfzPyNwePr
-# fA4Z1bn+8rPok46Wfu5SpkxJUn8mIAILm8fxpV4ym+JHLBjlj/Zupxqz/tgqYKbi
-# Ti/1Zalc17TaiAFmisbFdQh/KeXp0rDEYt2tdpxzgDTqELcEdpS5STBInfw0KzH0
-# nkHt2zisHFiSu4ZacX377uS0+b51Eu3AUOkh6Li7yRN1hgP0Rs4x5Be2YbUdWEQT
-# l/NoS4seCDQTGh3cu0WRiHtj1RXIHtTqYfBBcRTH8xorf3bw5FsJe7oBPv7KxMFV
-# P76TZ3w2TSil4s8i9I4r7gHLjwpwfynOkqi5Jhwr8EZ62bC3GVpWItte7L80v35v
-# vNymVfxpPrqTcvLKE7VT+GpHUuxHHjUaWwGEa+IGur1G9x8Y1mDwT5aYJ59EFSCT
-# gFgZqrZPVxjd4S6rs5qHkDAtK30mU3GAXpdxWSOdcYam20jprHrIIxo6R1ZMAtAa
-# vZaBQxYXGgxaADXDjZ5FEpoM8WVXVB+Q6FTm
+# hvcNAQkFMQ8XDTIzMDcxMDA4NTgyMVowLwYJKoZIhvcNAQkEMSIEINpHA4ho2kor
+# 5uNtyAU4KGAe2c9jwXFFs1nkoiBLlXPJMA0GCSqGSIb3DQEBAQUABIICALgptrAi
+# OWXdYe2ML75TKMHJRFlU3C0y6k+Q80wVyXjFASsXTyJCuJqmOUGLHveLKF4a7vug
+# C7rvKem/U5+H/8dgMTnXjgEm4LOJyQGho/SlN8X2Smm6OB8KMNqRBcAJJJia4a7O
+# odK/kbDtICKL9qSlKsksbuaoumgS9UeZJlzWuaGnIWRlv5LmZiP8vlnMLQSjtVbi
+# IQAziahRKiJnSA7MNA+RIlCt3N0QT1Cjx6dSsKHxyA/VcRrpfRQ1Wb+IvhUjS5sf
+# w3fVllhXU5fHEoucfuDuD//WzC+q5SSYh7VAUJFpBjGF3oM/TmzCkQgzte4d9Gu9
+# ndLoPFcV0btRIFssTZNJckoSYToEU67bKpj8pw8Xlah6z4PKVU4OiLrFs5coBPus
+# pgt3jtSJ8LLbTKG+1wW3mPp7svcGV1C/BOc+ShL1B/kZOzxFdXgKtyd0alafMtrF
+# OVEbDMfJPhaEubsbr+OkpYNJYpaAWQxzRaBEImHHqwVkF/mqADuC0fFKbm5HUds7
+# qzHlBFZb3yl/nHS5xQ2CLoR5cPpUahYodJ3gIptRGUdE5LwWbitsk4F5a4iENMJ+
+# rhOJK7hlUexFc0QEZ90Q+ce9VUrWYc30AA6FoDQ6BL8yFa2r8SRvNOtjcHK9NeM7
+# jsSi/grX9AQEvt6sKefzDzBw/4zAToZXIZqv
 # SIG # End signature block
