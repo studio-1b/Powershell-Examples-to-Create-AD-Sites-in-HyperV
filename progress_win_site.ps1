@@ -284,27 +284,31 @@ function Test-Installation {
         }
     }
     if($dhcpup) {
-        ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
-        get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
-            Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }   "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
-            Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)  "
-        }  2>$null
+        try {
+            get-NetAdapter "vEthernet ($SwitchName)" | Set-NetIPInterface -DHCP enabled
+            ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
+            get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
+                Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }   "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
+                Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)  "
+            }  2>$null
 
 
-        get-NetAdapter "vEthernet (JMBC-TorLAN)" | %{$_.InterfaceDescription} | %{ (Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'").IpAddress } | %{
-            ping -n 2 $_  | findstr 'time<1ms' >$null
-            Write-Host "[$?] host: ping  $_                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+            get-NetAdapter "vEthernet (JMBC-TorLAN)" | %{$_.InterfaceDescription} | %{ (Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'").IpAddress } | %{
+                ping -n 2 $_  | findstr 'time<1ms' >$null
+                Write-Host "[$?] host: ping  $_                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+            }
+
+            ping -n 2 $Dc1IP | findstr 'bytes=' >$null
+            Write-Host "[$?] host: ping  $Dc1IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+
+            ping -n 2 $Dc2IP | findstr 'bytes=' >$null
+            Write-Host "[$?] host: ping $Dc2IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+
+        }finally{
+            ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
+            get-NetAdapter "vEthernet ($SwitchName)" | Set-NetIPInterface -DHCP disabled
+            # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
         }
-
-        ping -n 2 $Dc1IP | findstr 'bytes=' >$null
-        Write-Host "[$?] host: ping  $Dc1IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
-
-        ping -n 2 $Dc2IP | findstr 'bytes=' >$null
-        Write-Host "[$?] host: ping $Dc2IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
-
-
-        ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
-        # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
     }
 }
 
@@ -367,8 +371,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOrQctqYfoojUD0csssBFitoU
-# 4jGgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUeWXPmabdERiDJE1xJ+yqpUU2
+# VzagghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -489,28 +493,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQorLGYtaMD1Wl7p4544LQ0
-# h9h03TANBgkqhkiG9w0BAQEFAASCAQCHTrT3mrAJLPwDCGMiTwnrmBtYqXdcWpOQ
-# 6ZJry1yx5uEoLMi/+7Z7GApveEz/E9CUpOUPrxFFKdqdhk4ZyeLZTjRu9hJYcY8N
-# Q/+W1PWy6dGnTr5S6y/tD9uwyxRAX0kYgMnBq1yCYoNbGcFIT3RTcpU/8N9++adk
-# 1PVUUW9yW2P66NC1kVO5yGnatRUFGAQMYuKozGwi5MtbueoCRftQXlq2m6KX66ys
-# f7h/8qxEn3GPlf6mN4QRkW4KW9sou8iypH3C+B3UNGKy9d16GZ8gYfqsPaCOT/wF
-# y6r2kpBRD9pl1Toavx6BHDRJQ6j3utVrz/BL0Md0TJ5IJNM9i5ICoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT/IaTB5S6FZXisDoEh+/i7
+# 33mktDANBgkqhkiG9w0BAQEFAASCAQCesZGVg8Tki7E1vXebM0859tREtryMJOnZ
+# AKI7qKXpHSjH0IljKi5SFs0XaSUXW7HXh0EooWZzGnq6W2ON/+cHyA2GLiL4sVJK
+# vOsZkbckw2+0OQ4Xv7449gLyJyenDVD3Fkqfm/dk1G/OeiadGatF7RSV2Ek9krvt
+# x5FRwlJaAK0LELg0+IRxSc99U4Y9WQ5wSLy7cemKIz0SSKK6K2wzcEubJZdhxgb9
+# gOEWrPZDXUNZDyjPV1jiMKYekIVwrlFc/EPVdcfDZ53S9Vyk28rxlwhLqzStHY+U
+# ywZFODN3NSf/T+dYiUJUoBPS+un4iUTfRcz+YWgzQRXm2wqYISKEoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcxMDA2MjI1MFowLwYJKoZIhvcNAQkEMSIEIFugAsat/b5H
-# sDTHkKdiEQu5hVJU85CnlcEvTbu397K6MA0GCSqGSIb3DQEBAQUABIICAAdUbbaY
-# TRcoEDw7EexHqGB9tiaqG63W0jYZFaJKBhRh5fJPv8iYIifDazcpe2bWbco5GOZJ
-# 24eR/SVFtVYija6BEo+JCUzoAu9kZ+MLllaraL23YiwmVw1+TJtRtlTj3F1qrgD5
-# q0YxftWKA5WM0rGisgyl1Pu2MtbdLVgof4Q8A9346Eo5KvebhdWvbKcN1qPWKhc6
-# 3EkphsDoatWXSLP7lhfzA7oxLokcbuTY4YlZU8lz9R9OUCWeOqLa/MMLsxfyoLs2
-# oQbGmdc/JEz/pk1BjFlvu903MCBtpk4m1FRz5M6PiuuYIHzPqLe4kX1Ik6+nBlx1
-# NdcTGSTqkIg2ja5EvKzJGx7ZBLLM5mgY90otO/ZOJzGe0KW206ft195le9LFRnd5
-# 36aYMe37PP6AjICoioBpDxyHAY5n/GVZmuqA6BViosy4hQaUdq4oqajP8vt0F1Pp
-# iZMKByrJIFyRChUQCdRcyv4HfJ2ngaFUCgGYjTbCHK4lxJeu6mtEj/f+dBCDwbkh
-# YwyZ0NzmEbK4TSj4EB3YEZbVZprHcZrZmMJ9wXBUh8ZpBwtO5bKHEW46rVJmrFh5
-# OeznhpgkqteDRgjvYBIEgx19cPfprJyXPZU2MIu/yxaomDQBJk9c3NMt5emQqklI
-# bzQ9GlsXLyoAJe9ioWsV29b0jSFb9tRFrW/N
+# hvcNAQkFMQ8XDTIzMDcxMDA3MTU0MFowLwYJKoZIhvcNAQkEMSIEIB2Oj9MBgOEl
+# AhXodUnyUgPO2sZT4kBCBydtozgOx4dIMA0GCSqGSIb3DQEBAQUABIICAIvvqfe3
+# FYHBjGZgdCYkdfu9WV4vFFT51k0VtGz9r7m5ql9JlwHXa79m+32JWrj1L1g128zM
+# j/JctARaPO+6yjTl4sp+pLTDH8enemP5tGAK7vcSqWk6jFU6LehOZv1JGClCOsLh
+# DRP0PE1B4NAp5eIjfCQ9viAalJCvwU7XC/ChkPEHh6yJ5KZF0f9hM0Xcc8FzMr/B
+# qHO0ZZ9SqYblcq3qN0q6d11KQ56uMAzifWOg+inFeRwlrt+a4YEcTrQ7FbwkKWMt
+# t/KCpzbC0dDZ8XyXQur8O2UHClT9y6EQZIj9uNIEolhjn6BCJG2rgB2UxH8kpDEU
+# AP0eil24MBj56wKwOQ04PxSA8lg5NkskxucIC3t5YCEUGAIB72p1W0ivt/QcH7Yc
+# daICL2Yw6L4QS6PEf5PZ5RXx58X9NgwxzpZyIeXdj+RpVmnndSO9G3IgjCA9h1Ac
+# LFJZiBQupcpwupOr2fp9RqImjL6b9LB01zHHB/SLjmfXHbeRfOEqKuMKkMdeMFK7
+# Ch4Qsa5VYtZfigWh1SVD9j1zda107oBFFa8iR3JsCZiqqiRZITDkpSTc6BxOBCxq
+# VMN5f+k9MxHFs8biFJ2YYitm2jkyBa/h9XsJJE6n2TMAc+9hjrcnGUoq1yUSC8ys
+# OYEckNIDSc2L9UY6M/sXtxDnREgvlQlQ2XP+
 # SIG # End signature block

@@ -150,10 +150,10 @@ function Test-Installation {
 
             foreach($site2 in $sites2) {
                 $part2=$site2 -split "="
-                $othergateway=$part2[1].replace(".0/",".254/")
-                $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-                ping -n 1 $othergateway | findstr 'bytes=' 
-                Write-Host "[$?] guest: ping $othergateway                                     "  -ForegroundColor $(iif $? "Green" "Red") 
+                $otherdc=$part2[1].replace(".0/",".1/")
+                $otherdc=$otherdc.substring(0,$otherdc.indexof("/"))
+                ping -n 1 $otherdc | findstr 'bytes=' 
+                Write-Host "[$?] guest: ping $otherdc (ok false, if other DC not installed)                                    "  -ForegroundColor $(iif $? "Green" "Red") 
             }
 
             Resolve-DNSName  $DC1Name2 2>$null 1>$null
@@ -242,29 +242,25 @@ function Test-Installation {
         }
     }
     if($dhcpup) {
-        ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
-        get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
-            Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }    "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
-            Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)              "
-        }  2>$null
+        try{
+            get-NetAdapter "vEthernet ($SwitchName)" | Set-NetIPInterface -DHCP Enabled
+            ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
+            get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
+                Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }    "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
+                Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)              "
+            }  2>$null
 
-        ping -n 1 $Dc1IP 2>$null | findstr 'bytes='
-        Write-Host "[$?] host: ping -n 1 $Dc1IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
+            ping -n 1 $Dc1IP 2>$null | findstr 'bytes='
+            Write-Host "[$?] host: ping -n 1 $Dc1IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
 
-        ping -n 1 $Dc2IP 2>$null | findstr 'bytes='
-        Write-Host "[$?] host: ping -n 1 $Dc2IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
+            ping -n 1 $Dc2IP 2>$null | findstr 'bytes='
+            Write-Host "[$?] host: ping -n 1 $Dc2IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
 
-        foreach($s in $sites) {
-            $part=$s -split "="
-            $othergateway=$part[1].replace(".0/",".254/")
-            $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-            ping -n 1 $othergateway 2>$null | findstr 'bytes='
-            Write-Host "[$?] host: ping $othergateway                              "  -ForegroundColor $(iif $? "Green" "Red") 
+        } finally {
+            ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
+            get-NetAdapter "vEthernet ($SwitchName)" | Set-NetIPInterface -DHCP Disabled
+            # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
         }
-
-
-        ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
-        # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
     }    else {
         Write-Host "[False] host: Can't test DORA, b/c DHCP on DC1 not up" -ForegroundColor Red
     }
@@ -334,8 +330,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUFEGYX7OF5FcHvekwT3dAiXaG
-# qbCgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUknmQducdjAxD7qa43zf2catX
+# CxmgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -456,28 +452,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQNz04H/5gGmd26G6wnKvED
-# j1TCFTANBgkqhkiG9w0BAQEFAASCAQAJzAHb7MdFLMTf0fQpK5Zg6pW20vxjlJ5b
-# 30OLicxg6tdDyq/IEXC66ivCgiqi9oU1OejgKrKSk/vuZi82BJpjlXyiFaQSr3P3
-# YNvzJSYBreyweYDyZBLR+nXNesYaB/fd85vpHpqAYFQRdtImZ1n1UeWA0xlJrb7Y
-# eL4kyByq1UsuxS9EIJEg1Ns+Rkzf/QyEYooA2Vj/FpQs69bs9E3eAPdhjuEaRC/2
-# BxRtHdEvqU2xjt6giFibtySTUENPbqqR6nzAGMH2jJP31xjvfFirxXvnJ1kSRaMe
-# jITAbZ8HG9HGnmqjzQEEq9JsMRYawNf3Y5fj6dhENrylrTPVfZIkoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ4Q5wWQX8dYvtiApycWYjY
+# xrFhiTANBgkqhkiG9w0BAQEFAASCAQCU9D4IIx8Lh4xqCko8SjleUit3a1hIf7yh
+# RElCC4l4I33Ao8KW5O0jUl6eBuY5NCFi5Np6PA7jI6V7Uo5Ji8437HeKKe70MhTv
+# unJNx2UWRRebe6yb5sONntxa2XUOM1/rj23C02PFLTJE86F2AXZmMcYRURWz94nQ
+# MDxmM2HEBNm1p3er4QSg3UC76BxkaFMEM13bKdM9SiquXfSk96rvK37190dpDKRG
+# eI4XbpJpx+vJXdsfHpqXcBEMzJCFi/lxd0MnKkLlfGMGOCyo5GHes4MTqs/blx+d
+# dwI5SbSlwNedZ+u5h/k9X+a9NNHZl0cYYg7peDf7jRT2TAomHIaGoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcxMDA2MjI1MFowLwYJKoZIhvcNAQkEMSIEIGJP7B9foOJy
-# U/iMSMSk18I+xpRL0+vxbYrWsw+1f5nwMA0GCSqGSIb3DQEBAQUABIICAInZYuKE
-# XjAxZdP1zuRjCJMJnuGZ1TkGxAnQXQy1NrhM8/Onvmnoa9cptOObE/lqo2tq8JmI
-# gykI1GXuRPGRy/3oYXoYjU+xlv0mBiJ+tE5REujparej6CWwsTXJBzvzs6+y6J+s
-# ZEBeq9bxpLO2h/s2YMAjiT8qquV9Tgg45G0gQIKbakwKyyGAKk8VAUAU6DpYMe+z
-# JELycaQ4+iQjLcbl5Dr+IxUC1ij65UBUeFLlAfFEAYxdOqZxfl6MSFrN7lHmqMzs
-# 7IuVKCUeuDBIZExjOx0iHD59IfSkDj/kvfqSPBCLdvBpNG7hQwdLClmB0hFojzzt
-# ZFUX1l2VdjfyFUBq2vl1/VSGVp5PqbsfbEonHHJyUErwEDNNKE7lMeJP1aAq8vaK
-# 1ohXxOLf1OEEGc6nuooazn5UHxmze6+QSkk+HrwzuTJDTF+STrjp8Ew96RV9Hv7s
-# 2XgNflRIsFGdhX+PEQa6NU+BbdB7flXOSyfW2oXiQKGiWpp1OMt7vKtBRkE7l1Df
-# PvBCjVoAv8i96kLlwXgaccgp8mq208d9CCbDZ+tr0K3utD9claLsVJtETCRf4K5C
-# /BRyzmV1W2Y3h6dWaDML1BUKedH0eZZJZNNG46q/Wsjgl7gfIWjZgRHY5xYjrdav
-# GP2VfURBqC0xoPWQDGCn6rKLDVuzVQ7qbY2X
+# hvcNAQkFMQ8XDTIzMDcxMDA3MTU0MFowLwYJKoZIhvcNAQkEMSIEIEsxxBLm/2BF
+# J1ZV/uqD4BoEzRgEFvqm2Gm81t+N3GNEMA0GCSqGSIb3DQEBAQUABIICAGdWfJsJ
+# vvfnrk2ctxzFySEI3wCYGzeAdx4jyN50u7aUND/tDQRyLQX5HgOVqiKZs+NMZ4ml
+# 6HiFVo/ub343ywMN2DY6x5vHR8DLPyNTdO+4wpuBllk7tIHrUna/vxu79uRsQGSg
+# XCXDrW0g6OzpcLdJIOizOzW6c6Y9N7XzN76aYHnFe3yFGFyrOAX14aJfzPyNwePr
+# fA4Z1bn+8rPok46Wfu5SpkxJUn8mIAILm8fxpV4ym+JHLBjlj/Zupxqz/tgqYKbi
+# Ti/1Zalc17TaiAFmisbFdQh/KeXp0rDEYt2tdpxzgDTqELcEdpS5STBInfw0KzH0
+# nkHt2zisHFiSu4ZacX377uS0+b51Eu3AUOkh6Li7yRN1hgP0Rs4x5Be2YbUdWEQT
+# l/NoS4seCDQTGh3cu0WRiHtj1RXIHtTqYfBBcRTH8xorf3bw5FsJe7oBPv7KxMFV
+# P76TZ3w2TSil4s8i9I4r7gHLjwpwfynOkqi5Jhwr8EZ62bC3GVpWItte7L80v35v
+# vNymVfxpPrqTcvLKE7VT+GpHUuxHHjUaWwGEa+IGur1G9x8Y1mDwT5aYJ59EFSCT
+# gFgZqrZPVxjd4S6rs5qHkDAtK30mU3GAXpdxWSOdcYam20jprHrIIxo6R1ZMAtAa
+# vZaBQxYXGgxaADXDjZ5FEpoM8WVXVB+Q6FTm
 # SIG # End signature block
