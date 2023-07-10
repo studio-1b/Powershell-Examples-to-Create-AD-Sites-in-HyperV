@@ -265,7 +265,7 @@ function Show-Progress {
                 Write-Host "[$(IBAnd $code $flag "X" " ")] guest: Find-NetRoute -RemoteIPAddress 8.8.8.8 | Where {`$_.InterfaceAlias -eq Internet}     " -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
 
-                ping -n 1 8.8.8.8
+                ping -n 1 8.8.8.8| findstr 'bytes='
                 $code=$code + (IIf $? $flag 0)
                 Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping 8.8.8.8                                         "                                                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
                 $flag=$flag*2
@@ -283,7 +283,7 @@ function Show-Progress {
                 $flag=$flag*2
 
                 foreach($wan in $allwan) {
-                    ping -n 1 $wan
+                    ping -n 1 $wan| findstr 'bytes='
                     $code=$code + (IIf $? $flag 0)
                     Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping $wan                                        "                                                                    -ForegroundColor (IBAnd $code $flag "Green" "Red")
                     $flag=$flag*2
@@ -302,7 +302,7 @@ function Show-Progress {
                     }
                 }
                 foreach($lan in $alllan) {
-                    ping -n 1 $lan
+                    ping -n 1 $lan | findstr 'bytes='
                     $code=$code + (IIf $? $flag 0)
                     Write-Host "[$(IBAnd $code $flag "X" " ")] guest: ping $lan                                        "                                                                     -ForegroundColor (IBAnd $code $flag "Green" "Red")
                     $flag=$flag*2
@@ -367,8 +367,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUu6cNl0Zo2cfO9duGqFAu/qJo
-# qjygghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5XRGfBlk8phBXAX+devyvtug
+# LJCgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -489,28 +489,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRF2jsiNZJmdpt8RNe4BUYN
-# VbDlVDANBgkqhkiG9w0BAQEFAASCAQBbcS9B3kBjfBVhmHck6XpTx7mzycxBprfD
-# Qzwui9eJMaspycH34/pcicTFZFzmXjLfAf8N6pMblqCtvM2Hi2bn023W6G1OKIEX
-# oaj3Ic5VNRJE/Wv/8Yj03J4PrhTvEB1F9kyvfUrp41vV6e3GBPTfujka3m3b8Sqr
-# Hi8SAWbcKEmZKi+5lB4MTDFLl27fTJGN0BilrYN9pLVQhjxBuJtMtPZPnE9/n8ki
-# NtkbYpH9VMa8JRfwxXAihOK5E7TilF8P+zYZBlMqVA5fdLuMt+bkFAH3WxOfJGel
-# XWxMnRP7vdXe7wE13lM00kvZJxc+bvC1YyDYlewpoh20A2lp4WhCoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQq3ODlXREJ7w0rodqrZHkQ
+# 4XE5tzANBgkqhkiG9w0BAQEFAASCAQC8XwzqaGuBBLGPGhVS+ZrPsT+gDPuIgoC5
+# UPaw65/fSfJ0l43A12RJf5Asp6IOZ+MYGqqUuo541Cp6xABtpm/1bi2bsR/XCrYi
+# pES4OCVBfstZdWt1MRGyy+ZTku6x+Cg7b9U8XAWtDBtfz5tXUJ//EL1UQMD5yTnX
+# Zic0MtE/0UwhapzB90aO3rxP+2iDyIQ4MwBuiL4f/OAbiHqTH5O+rVfclriKFm2e
+# fRb13pRONTfd0Qx/wysQLWJIS8sGjwGUXbFJR1Oxmg8dkCtnUIZnyuyIsTlfkaEt
+# DDgKtZk8lzr9gLWMyEzUMq5e3xVQGaL3iqtf9p4dwnm2YLtPNYDDoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwODE5NTQzMFowLwYJKoZIhvcNAQkEMSIEIHkxWN4Hdg6H
-# Ht8FlXBu7WsmaT/DTBSSCfxhRJvzGr92MA0GCSqGSIb3DQEBAQUABIICACZszwT2
-# tfrbaZYc15jfVoXZOpfCmtx+f4IrMib0G9pp9yQwMdw61fMARxW9rMBVmIAZGnvN
-# 4GHgjy9ROV4OnBG2bR8tIrYiU8fYo/sADnX8CUCj5sksc5g7+8O0C4tN6UArbjlJ
-# AuwJS7OCX/IUX7NYhg3qVyL9C7NT2qNKCkt2jXOdExnprXpi79kVHWK6tTRNH7/X
-# rbJo7hbH1DWsjVBRWvWYGve6NYgFnjMHC7nCLH8Y5iWrit+IPXrQXH6RhAZ7lq+n
-# u0plflwfPMynVu/41YcnmwlkYB2ioym2h56Gxtb6CAVn20HF5tfeK8r6edjx1e2d
-# hxCn6xLAqm2NEZGwte0me6tSD86XNj5ndHGd2mZG4QW1bT2M9GEkxhIRyknUkNF1
-# CNv1zbcELhAJLBRJpkpnjkcU1X+E7jWLvrCKxGIGMEqq+qbwYrWTMYq7g/pzUUjj
-# GzH8B27WZZOHUogFk8lu4+hGtsMfyMBGf/Xw3aApIGtOJDHOBHsQaeeyvfmVWEjk
-# pWfxt7jKx83hwg64kDtsW/ZVU6IRvLfQHss/rkyTOOa1ZwP4X4mYdT71c7aCuHfG
-# dR5bWlwjyAEfp3ThfMCizcZDI9/Nk8+esnFlQ+7qJCJ1mD5k6w2xHxMt+m1sRsFw
-# tAta9/dWaI3DSTuSTr8VcR/gzGVeyMq3JP7N
+# hvcNAQkFMQ8XDTIzMDcxMDA2MjI1MFowLwYJKoZIhvcNAQkEMSIEIBUFiu9Avos8
+# GH2cLYrYEbB7NilyKzLolIivxMy/4ctCMA0GCSqGSIb3DQEBAQUABIICAJqtDnkP
+# OtGEP1D4MG7Im94f24/WoYuQBV3k3goFDbZdW8DYABKZSUjeAJsi/ilHoS4Jr0G8
+# uaOBsDhXkWUU7+wGk/VoLqc5f12Nbk9u4138xssFKrspOwvj2lPjefHbqvTLxj3N
+# UaeRo3RBeJKxuVIffm2zG8Mhw1wRPaMgcXB3IY3bS1z3WdqTqE/XtdWyhcu8//b5
+# 0AVOpPbc+Sh/KFwux+d9U/JG1GN6DpwVxYIkZOvvUex/7Aw4hC6uhEqQ6FwZQrGv
+# y2eiGOOkpYXyclbpHB1BKZ1+dg0Q+xjFWFPvpGFXOCUTmwigF+qg9WHHMFXmHkHr
+# NpiueUW/w+2z451izcJO3pVDn2sSaD0eOUJW/cK0d7k5ZNA6nXi3EQZ77SG0II+e
+# kk6JLhnwFJnBCIAxC/btGadk3DAwhWXh++4PbiT+bivIbhquOR/uR148ga3VRnqs
+# D8mNJOeQAXRG2Td6aqoewDP63dMAqHpVIXDTd1cqbKPyxhuZpgOT+X1InByi0LOH
+# 1YRS5Dz0v/vlkRUwm5UE43y2xnQ+vkZ2FQhOfhnQAUtnUFhTLn2OmIhAr6S3hjwO
+# IatBFiQ14LkpAPdCzs77oQb/3maXJWQsWQel0EyImuMjBInG5NNlW9d08NUZJyfM
+# AeJj0wLF7Y3i92wLDyR6WIa6x/Lx2pvAoOM5
 # SIG # End signature block

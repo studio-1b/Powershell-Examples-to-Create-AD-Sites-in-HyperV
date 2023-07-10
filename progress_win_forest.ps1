@@ -2,10 +2,10 @@ $arglen=$($args.length)
 if($arglen -lt 4) {
     Write-Host "Use same arguments as 'create_win_forest.ps1' to see online progress of the script"
    #Write-Host "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789|123456789 123456789 123456789"
-    Write-Host "                               Prefix    Gateway/subnet      other site subnets                      			Domain"
-    Write-Host "                               ------    --------------      ---------------                       				------"
+    Write-Host "                                   Prefix    Gateway/subnet      other site subnets                      			Domain"
+    Write-Host "                                   ------    --------------      ---------------                       				------"
     Write-Host "if you are running..."
-    Write-Host "Running: ./create_win_forest.ps1 JMBC-Van  192.168.200.254/24  JMBC-Tor=192.168.150.0/24,JMBC-Mon=192.168.100.0/24,JMBC-Cal=192.168.50.0/24  JoMaBoCh"
+    Write-Host "Running: ./create_win_forest.ps1   JMBC-Van  192.168.200.254/24  JMBC-Tor=192.168.150.0/24,JMBC-Mon=192.168.100.0/24,JMBC-Cal=192.168.50.0/24  JoMaBoCh"
     Write-Host "then run to see progress..."
     Write-Host "Usage:   ./progress_win_forest.ps1 JMBC-Van  192.168.200.254/24  JMBC-Tor=192.168.150.0/24,JMBC-Mon=192.168.100.0/24,JMBC-Cal=192.168.50.0/24  JoMaBoCh"
 
@@ -32,17 +32,15 @@ function Wait-For-Session {
         $localcred,
         $waitmessage
     )
-    Write-Host "trying to connect to $server"
+    Write-Host "trying to connect to $server                                     "
 
-    $session=New-PSSession -VMName $server -credential $logincred
-    if( -not $? ) { $session=New-PSSession -VMName $server -credential $localcred }
+    $session=New-PSSession -VMName $server -credential $logincred 2>$null
+    if( -not $? ) { $session=New-PSSession -VMName $server -credential $localcred 2>$null}
     while( -not $? ) {
-        Write-Host " ...connect to $server failed... $waitmessage ...trying again in 1sec"
-        Start-Sleep -Seconds 1;
-        $session=New-PSSession -VMName $server -credential $logincred
-        if( -not $? ) { $session=New-PSSession -VMName $server -credential $localcred }
+        Write-Host "Moving on now...                                             "; 
+        return $null
     }
-    Write-Host "$server connected!!!" -ForegroundColor Black
+    Write-Host "$server connected!!!                                             " -ForegroundColor Black
 
     return $session
 }
@@ -146,36 +144,37 @@ function Test-Installation {
             $Dc1IP2=$args[5]
             $Dc2IP2=$args[6]
 
-            ping -n 1 8.8.8.8
+            # ping bug returns true, when it cannot arp the address.  Only output is reliable
+            ping -n 1 8.8.8.8 | findstr 'bytes='
             Write-Host "[$?] guest: ping 8.8.8.8                                               "  -ForegroundColor $(iif $? "Green" "Red") 
 
             foreach($site2 in $sites2) {
                 $part2=$site2 -split "="
                 $othergateway=$part2[1].replace(".0/",".254/")
                 $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-                ping -n 1 $othergateway 2>$null 1>$null
+                ping -n 1 $othergateway | findstr 'bytes=' 
                 Write-Host "[$?] guest: ping $othergateway                                     "  -ForegroundColor $(iif $? "Green" "Red") 
             }
 
-            Resolve-DNSName  $DC1Name2
+            Resolve-DNSName  $DC1Name2 2>$null 1>$null
             Write-Host "[$?] guest: Resolve-DNSName  $DC1Name2                                 "                                                                                                                                     -ForegroundColor $(iif $? "Green" "Red") 
 
-            Resolve-DNSName  $DC2Name2
+            Resolve-DNSName  $DC2Name2 2>$null 1>$null
             Write-Host "[$?] guest: Resolve-DNSName  $DC2Name2, for joined login auto dns register   " -ForegroundColor $(iif $? "Green" "Red") 
 
-            Resolve-DNSName  $FullyQualifiedDomainName2
+            Resolve-DNSName  $FullyQualifiedDomainName2 2>$null 1>$null
             Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2, for list of domain controllers  "  -ForegroundColor $(iif $? "Green" "Red") 
 
-            Resolve-DNSName  $FullyQualifiedDomainName2 | findstr $Dc1IP2
+            Resolve-DNSName  $FullyQualifiedDomainName2  2>$null | findstr $Dc1IP2 2>$null 1>$null
             Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc1IP2     "  -ForegroundColor $(iif $? "Green" "Red") 
 
-            Resolve-DNSName  $FullyQualifiedDomainName2 | findstr $Dc2IP2
+            Resolve-DNSName  $FullyQualifiedDomainName2 2>$null | findstr $Dc2IP2 2>$null 1>$null
             Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc2IP2     "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-DhcpServerv4Scope $lannetwork2
+            try{Get-DhcpServerv4Scope $lannetwork2 2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-DhcpServerv4Scope $lannetwork2                          "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-DhcpServerv4Failover -ComputerName "$Dc1Name2" -Name "$lannetwork2-failover"
+            try{Get-DhcpServerv4Failover -ComputerName "$Dc1Name2" -Name "$lannetwork2-failover" 2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc1Name2' -Name '$lannetwork2'   "   -ForegroundColor $(iif $? "Green" "Red") 
 
             foreach($site2 in $sites2) {
@@ -185,13 +184,13 @@ function Test-Installation {
                 $sitename=$part2[0]
                 $sitesubnet=$part2[1]
 
-                Get-ADReplicationSite -identity $sitename
+                try{Get-ADReplicationSite -identity $sitename 2>$null 1>$null} catch {}
                 Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename                "   -ForegroundColor $(iif $? "Green" "Red") 
 
-                Get-ADReplicationSubnet -Identity $sitesubnet
+                try{Get-ADReplicationSubnet -Identity $sitesubnet 2>$null 1>$null} catch {}
                 Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $sitesubnet            "   -ForegroundColor $(iif $? "Green" "Red") 
 
-                get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" | findstr "default-to-$sitename"
+                try{get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null | findstr "default-to-$sitename" 2>$null 1>$null} catch {}
                 Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
             }
         }
@@ -207,33 +206,69 @@ function Test-Installation {
     Write-Host "[($($Dc2Session -ne $null))] host: New-PSSession -VMName $Dc2Name -credential (New-Object PSCredential ($u, ConvertTo-SecureString($password)))   "                    -ForegroundColor $(iif ($Dc2Session -ne $null) "Green" "Red") 
 
     if($Dc2Session -ne $null) {
+        $ArgumentList=$DC1Name,$DC2Name,$FullyQualifiedDomainName,$lannetwork,$sites,$Dc1IP,$Dc2IP
+        $rc=Invoke-Command -Session $Dc2Session -ArgumentList $ArgumentList -ScriptBlock {
+            Function IIf($If, $Right, $Wrong) {If ($If) {$Right} Else {$Wrong}}
+
+            $DC1Name2=$args[0]
+            $DC2Name2=$args[1]
+            $FullyQualifiedDomainName2=$args[2]
+            $lannetwork2=$args[3]
+            $sites2=$args[4]
+            $Dc1IP2=$args[5]
+            $Dc2IP2=$args[6]
+
+            Get-ADDomainController 2>$null 1>$null
+            Write-Host "[$?] guest: Get-ADDomainController (Is AD software installed?)               "   -ForegroundColor $(iif $? "Green" "Red") 
+
+            Get-ADDomainController $DC2Name2 2>$null 1>$null
+            Write-Host "[$?] guest: Get-ADDomainController $DC2Name2                                 "   -ForegroundColor $(iif $? "Green" "Red") 
+
+            Get-DhcpServerv4Failover -ComputerName "$Dc2Name2" -Name "$lannetwork2-failover" 2>$null 1>$null
+            Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc2Name2' -Name '$lannetwork2'   "   -ForegroundColor $(iif $? "Green" "Red") 
+
+        }
     }
 
 
     # testing on host
     # Internal Switch, should create a host adapter named ie: "vEthernet (JMBC-VanLAN)"
-    get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
-        Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }    "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
-        Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)              "
-    }  2>$null
-
-    ping -n 1 $Dc1IP 2>$null 1>$null
-    Write-Host "[$?] host: ping -n 1 $Dc1IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
-
-    ping -n 1 $Dc2IP 2>$null 1>$null
-    Write-Host "[$?] host: ping -n 1 $Dc2IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
-
-    foreach($s in $sites) {
-        $part=$s -split "="
-        $othergateway=$part[1].replace(".0/",".254/")
-        $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
-        ping -n 1 $othergateway 2>$null 1>$null
-        Write-Host "[$?] host: ping $othergateway                              "  -ForegroundColor $(iif $? "Green" "Red") 
+    $dhcpup=$false
+    if($Dc1Session -ne $null) {
+        $dhcpup=Invoke-Command -Session $Dc1Session -ArgumentList $lannetwork -ScriptBlock {
+            $lannetwork2=$args[0]
+            Get-DhcpServerv4Scope $lannetwork2    2>$null 1>$null
+            return $?
+        }
     }
+    if($dhcpup) {
+        ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
+        get-NetAdapter "vEthernet ($SwitchName)" | %{$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'" } | %{ $_.RenewDHCPLease(); } | %{
+            Write-Host "[$($_.ReturnValue -eq 0)] host: get-NetAdapter `"vEthernet ($SwitchName)`" | %{`$_.InterfaceDescription} | %{ Get-WmiObject Win32_NetworkAdapterConfiguration -Filter `"Description='`$_'`" } | %{ `$_.RenewDHCPLease(); } | %{ `$_.ReturnValue -eq 0 }    "   -ForegroundColor (iif ($_.ReturnValue -eq 0) "Green" "Red") 
+            Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)              "
+        }  2>$null
+
+        ping -n 1 $Dc1IP 2>$null | findstr 'bytes='
+        Write-Host "[$?] host: ping -n 1 $Dc1IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
+
+        ping -n 1 $Dc2IP 2>$null | findstr 'bytes='
+        Write-Host "[$?] host: ping -n 1 $Dc2IP                                    "     -ForegroundColor $(iif $? "Green" "Red") 
+
+        foreach($s in $sites) {
+            $part=$s -split "="
+            $othergateway=$part[1].replace(".0/",".254/")
+            $othergateway=$othergateway.substring(0,$othergateway.indexof("/"))
+            ping -n 1 $othergateway 2>$null | findstr 'bytes='
+            Write-Host "[$?] host: ping $othergateway                              "  -ForegroundColor $(iif $? "Green" "Red") 
+        }
 
 
-    ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
-    # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
+        ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
+        # above line is necessary bc the default gateway received by DHCP, on interface, confuses Windows routing for 0.0.0.0/0
+    }    else {
+        Write-Host "[False] host: Can't test DORA, b/c DHCP on DC1 not up" -ForegroundColor Red
+    }
+    
 }
 
 
@@ -282,10 +317,13 @@ while ($true) {
                                   $CurrentTime.hours,
                                   $CurrentTime.minutes,
                                   $CurrentTime.seconds)) -nonewline
-    write-host ""
+    Write-Host "                                                                     "
     Test-Installation -FullyQualifiedDomainName $domainca
-    write-host ""
-    write-host "##################################"
+    Write-Host "                                                                     "
+    write-host "##################################                                   "
+    Write-Host "                                                                     "
+    Write-Host "                                                                     "
+    Write-Host "                                                                     "
 
     Start-Sleep -Seconds 5
     if ($Host.UI.RawUI.KeyAvailable -and ("q" -eq $Host.UI.RawUI.ReadKey("IncludeKeyUp,NoEcho").Character)) {
@@ -296,8 +334,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6pTejRhvWaskzVzFFjU8onLb
-# Cx2gghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUFEGYX7OF5FcHvekwT3dAiXaG
+# qbCgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -418,28 +456,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTZK7iPMYIa5Olkyrkx6Yac
-# 7k01YjANBgkqhkiG9w0BAQEFAASCAQCzhD3ZwGvgmjNOFKv5neRlAxDcEPUQfaeZ
-# 5v1Yf8hVd6GWjeNw9OtnnhIMfB2Ypln7HM7IZ2Rw3VLL8o65i3SqDSVhmOZmMdXa
-# RZSb2G+7JL4/AdFaueC/ZU3brsP/DJ+S7SVqxpqRed0CHzffN0EUifSkGW7mKna+
-# jsToHsnM+dVMoffM2nEgE80mzfbuTIRSdxUaF1BLR+69XF4LzTslwKUA38XygnLi
-# WYxnpTHAhjLvdxsfoxlv9EBw+IPS0QGhTHyVAMsXF+oR0XodDGQt9TfWejv8v0iV
-# QzSvrJTZX6J2rzo/hJpmGdQtkXd8+HTRHHbyEgewKSJJLpyox3VFoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQNz04H/5gGmd26G6wnKvED
+# j1TCFTANBgkqhkiG9w0BAQEFAASCAQAJzAHb7MdFLMTf0fQpK5Zg6pW20vxjlJ5b
+# 30OLicxg6tdDyq/IEXC66ivCgiqi9oU1OejgKrKSk/vuZi82BJpjlXyiFaQSr3P3
+# YNvzJSYBreyweYDyZBLR+nXNesYaB/fd85vpHpqAYFQRdtImZ1n1UeWA0xlJrb7Y
+# eL4kyByq1UsuxS9EIJEg1Ns+Rkzf/QyEYooA2Vj/FpQs69bs9E3eAPdhjuEaRC/2
+# BxRtHdEvqU2xjt6giFibtySTUENPbqqR6nzAGMH2jJP31xjvfFirxXvnJ1kSRaMe
+# jITAbZ8HG9HGnmqjzQEEq9JsMRYawNf3Y5fj6dhENrylrTPVfZIkoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwODE5NTQzMFowLwYJKoZIhvcNAQkEMSIEIM1bqtVq30Yc
-# 7AbXYsh5hMJpkM6/WtITUc8AkpcoKvhxMA0GCSqGSIb3DQEBAQUABIICAA9argQq
-# sddTSX431clvpopdZXhRz4SdkN5WV+BbY5HTyHCD4Z6dPxkFgH8jvh+aTarWDfCa
-# xiPrcU1JDW0odASD4aUJK9Hn1F+L9Z6dYyYNA9QoPGeONGWv/gUTjHMzwKJLal1o
-# qoDc3SPHtmuA03mL8YMrExMljLdB/hB/x8aSvrnYt+VE83Du/rosDuKeGB1KZoD7
-# 7vHvPyPLPJ3stXM7AUdl7B/wO9sLG4TsPfLIPFTyuCwkEXzv46gHWfpW16W/ES5C
-# ID3Y3w+yp8VT5NS4HlZHwdEwcsZmcCCzfV9cFavIe5WpGB3rSGJKIHHnsBSqRjOZ
-# so6y2AonAohTiXLXoI0QkuDGqjxP6zDWr3ZwB4J0EmYjT1oFjYmNf/X5irzYL/KR
-# 8mBKBNwQ5U/+4c86Ifsaf0cGiN+8V5kuJGUnZplgoeB1mJ7ocSMLvyM0S1jd9Abp
-# YIY/isrU53qeosqnpMs76fIlgECzp/n1PB5nq4r+RAXdJ69vKLT8bKdhdQnsn+P6
-# QdjGbcjIonkRWsK1KdYgieOVxfFfpNct+BAASZNVyhVys/rB1zqlaOGKweR1QzKr
-# +ZIt70QfctsrirrVqR1+1ux9veDKx6Lz6uRSqjlwSmxpqLrXhmWeSYSOHPHHz//T
-# QlpkgjzdfzWlyh77qJjZ34ZavxDdon8oMXXm
+# hvcNAQkFMQ8XDTIzMDcxMDA2MjI1MFowLwYJKoZIhvcNAQkEMSIEIGJP7B9foOJy
+# U/iMSMSk18I+xpRL0+vxbYrWsw+1f5nwMA0GCSqGSIb3DQEBAQUABIICAInZYuKE
+# XjAxZdP1zuRjCJMJnuGZ1TkGxAnQXQy1NrhM8/Onvmnoa9cptOObE/lqo2tq8JmI
+# gykI1GXuRPGRy/3oYXoYjU+xlv0mBiJ+tE5REujparej6CWwsTXJBzvzs6+y6J+s
+# ZEBeq9bxpLO2h/s2YMAjiT8qquV9Tgg45G0gQIKbakwKyyGAKk8VAUAU6DpYMe+z
+# JELycaQ4+iQjLcbl5Dr+IxUC1ij65UBUeFLlAfFEAYxdOqZxfl6MSFrN7lHmqMzs
+# 7IuVKCUeuDBIZExjOx0iHD59IfSkDj/kvfqSPBCLdvBpNG7hQwdLClmB0hFojzzt
+# ZFUX1l2VdjfyFUBq2vl1/VSGVp5PqbsfbEonHHJyUErwEDNNKE7lMeJP1aAq8vaK
+# 1ohXxOLf1OEEGc6nuooazn5UHxmze6+QSkk+HrwzuTJDTF+STrjp8Ew96RV9Hv7s
+# 2XgNflRIsFGdhX+PEQa6NU+BbdB7flXOSyfW2oXiQKGiWpp1OMt7vKtBRkE7l1Df
+# PvBCjVoAv8i96kLlwXgaccgp8mq208d9CCbDZ+tr0K3utD9claLsVJtETCRf4K5C
+# /BRyzmV1W2Y3h6dWaDML1BUKedH0eZZJZNNG46q/Wsjgl7gfIWjZgRHY5xYjrdav
+# GP2VfURBqC0xoPWQDGCn6rKLDVuzVQ7qbY2X
 # SIG # End signature block

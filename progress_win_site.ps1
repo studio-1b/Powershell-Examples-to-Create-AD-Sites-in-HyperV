@@ -155,10 +155,10 @@ function Test-Installation {
             $Dc2IP2=$args[6]
             $sitename=$args[7]
 
-            ping -n 1 8.8.8.8  2>$null 1>$null
+            ping -n 2 8.8.8.8  2>$null | findstr 'bytes='
             Write-Host "[$?] guest: ping 8.8.8.8                                            "  -ForegroundColor $(iif $? "Green" "Red") 
 
-            ping -n 1 $dc_dns2  2>$null 1>$null
+            ping -n 2 $dc_dns2  2>$null | findstr 'bytes='
             Write-Host "[$?] guest: ping -n 1 $dc_dns2                                      "  -ForegroundColor $(iif $? "Green" "Red") 
 
             Write-Host "(below uses Resolve-DNSName, instead of nslookup, b/c nslookup still returns $true exit code despite unable to find DNS record)   "
@@ -190,13 +190,13 @@ function Test-Installation {
             Get-DhcpServerv4Failover -ComputerName "$Dc1Name2" -Name "$lannetwork2-failover"  2>$null 1>$null
             Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc1Name2' -Name '$lannetwork2-failover'   "                                                                                         -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-ADReplicationSite -identity $sitename  2>$null 1>$null
+            try{Get-ADReplicationSite -identity $sitename  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename              "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-ADReplicationSubnet -Identity "$lannetwork2/24"  2>$null 1>$null
+            try{Get-ADReplicationSubnet -Identity "$lannetwork2/24"  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $lannetwork2/24      "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null  | findstr "default-to-$sitename"  2>$null 1>$null
+            try{get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null  | findstr "default-to-$sitename"  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
         }
     }
@@ -225,10 +225,10 @@ function Test-Installation {
             $Dc2IP2=$args[6]
             $sitename=$args[7]
 
-            ping -n 1 8.8.8.8  2>$null 1>$null
+            ping -n 2 8.8.8.8  2>$null | findstr 'bytes='
             Write-Host "[$?] guest: ping 8.8.8.8                                        "  -ForegroundColor $(iif $? "Green" "Red") 
 
-            ping -n 1 $dc_dns2  2>$null 1>$null
+            ping -n 2 $dc_dns2  2>$null | findstr 'bytes='
             Write-Host "[$?] guest: ping -n 1 $dc_dns2                                  "  -ForegroundColor $(iif $? "Green" "Red") 
 
             Write-Host "(below uses Resolve-DNSName, instead of nslookup, b/c nslookup still returns $true exit code despite unable to find DNS record)"
@@ -254,19 +254,19 @@ function Test-Installation {
             Resolve-DNSName  $FullyQualifiedDomainName2 2>$null  | findstr $Dc2IP2  2>$null 1>$null
             Write-Host "[$?] guest: Resolve-DNSName $FullyQualifiedDomainName2 | findstr $Dc2IP2   "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-DhcpServerv4Scope $lannetwork2  2>$null 1>$null
+            try{Get-DhcpServerv4Scope $lannetwork2  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-DhcpServerv4Scope $lannetwork2   "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-DhcpServerv4Failover -ComputerName "$Dc2Name2" -Name "$lannetwork2-failover"  2>$null 1>$null
+            try{Get-DhcpServerv4Failover -ComputerName "$Dc2Name2" -Name "$lannetwork2-failover"  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-DhcpServerv4Failover -ComputerName '$Dc2Name2' -Name '$lannetwork2-failover'   "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-ADReplicationSite -identity $sitename  2>$null 1>$null
+            try{Get-ADReplicationSite -identity $sitename  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-ADReplicationSite -identity $sitename           "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            Get-ADReplicationSubnet -Identity "$lannetwork2/24"  2>$null 1>$null
+            try{Get-ADReplicationSubnet -Identity "$lannetwork2/24"  2>$null 1>$null} catch {}
             Write-Host "[$?] guest: Get-ADReplicationSubnet -Identity $lannetwork2/24   "   -ForegroundColor $(iif $? "Green" "Red") 
 
-            get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null  | findstr "default-to-$sitename"   2>$null 1>$null
+            try{get-ADReplicationSiteLink -filter "Name -eq 'default-to-$sitename'" 2>$null  | findstr "default-to-$sitename"   2>$null 1>$null} catch {}
             Write-Host "[$?] guest: get-ADReplicationSiteLink -filter Name -eq 'Default-to-$sitename' | findstr Default-to-$sitename   "   -ForegroundColor $(iif $? "Green" "Red") 
         }
     }
@@ -275,6 +275,7 @@ function Test-Installation {
     # testing on host
     # Internal Switch, should create a host adapter named ie: "vEthernet (JMBC-VanLAN)"
     $dhcpup=$false
+    $Dc1Session=Wait-For-Session -server $Dc1Name -logincred $domaincred -localcred $localcred -waitmessage "."  
     if($Dc1Session -ne $null) {
         $dhcpup=Invoke-Command -Session $Dc1Session -ArgumentList $lannetwork -ScriptBlock {
             $lannetwork2=$args[0]
@@ -289,11 +290,17 @@ function Test-Installation {
             Write-host "(above is to test if DHCP DORA is working, using DC as DHCP server)  "
         }  2>$null
 
-        ping -n 1 $Dc1IP 2>$null 1>$null
-        Write-Host "[$?] host: ping -n 1 $Dc1IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
 
-        ping -n 1 $Dc2IP 2>$null 1>$null
-        Write-Host "[$?] host: ping -n 1 $Dc2IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+        get-NetAdapter "vEthernet (JMBC-TorLAN)" | %{$_.InterfaceDescription} | %{ (Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "Description='$_'").IpAddress } | %{
+            ping -n 2 $_  | findstr 'time<1ms' >$null
+            Write-Host "[$?] host: ping  $_                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+        }
+
+        ping -n 2 $Dc1IP | findstr 'bytes=' >$null
+        Write-Host "[$?] host: ping  $Dc1IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
+
+        ping -n 2 $Dc2IP | findstr 'bytes=' >$null
+        Write-Host "[$?] host: ping $Dc2IP                                              "     -ForegroundColor $(iif $? "Green" "Red") 
 
 
         ipconfig /release "vEthernet ($SwitchName)"  2>$null 1>$null
@@ -360,8 +367,8 @@ while ($true) {
 # SIG # Begin signature block
 # MIIbpwYJKoZIhvcNAQcCoIIbmDCCG5QCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjuChraiaUBtfmNcifHEm4k9I
-# BASgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOrQctqYfoojUD0csssBFitoU
+# 4jGgghYZMIIDDjCCAfagAwIBAgIQILC/BxlyRYZJ/JpoWdQ86TANBgkqhkiG9w0B
 # AQsFADAfMR0wGwYDVQQDDBRBVEEgQXV0aGVudGljb2RlIEJvYjAeFw0yMzA1MTMw
 # NzAxMzRaFw0yNDA1MTMwNzIxMzRaMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNv
 # ZGUgQm9iMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv1S634xJz5zL
@@ -482,28 +489,28 @@ while ($true) {
 # ggT4MIIE9AIBATAzMB8xHTAbBgNVBAMMFEFUQSBBdXRoZW50aWNvZGUgQm9iAhAg
 # sL8HGXJFhkn8mmhZ1DzpMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT1gSb/bPm4MPddOiyxgQfp
-# ZC6fnTANBgkqhkiG9w0BAQEFAASCAQBT4h3vVx4QAg6l1jAZc/bpX4WSjEgXkv0I
-# Oe4WGSM+UbYxqSrPCoa53IJfkb1eCH2rrwFvHPj/71oD0w7PV1wzTmEmY0cta9Wa
-# 2zxXsRp6NVaC3ka/Zo0qghbj5i6LBNKdpGunZESnB+UEAoYE49j1u+ga+4JvIZOz
-# vSkaEfRVma1RrXgb73CZvhJCBeD7sQMulz8OrlsfxpqK4iaRfYA77v/wWXaomzC4
-# Jeap+D2xuzkMaYwuXvujDhjlBdPIsbNiADRiiLcb2Xpc4usBb0fO2RX5My4we/BQ
-# Bu1dnfvsOqZRo/3BdAtdii/DeC9YjIWowPpZ5g4IAJwFstGYVJmxoYIDIDCCAxwG
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQorLGYtaMD1Wl7p4544LQ0
+# h9h03TANBgkqhkiG9w0BAQEFAASCAQCHTrT3mrAJLPwDCGMiTwnrmBtYqXdcWpOQ
+# 6ZJry1yx5uEoLMi/+7Z7GApveEz/E9CUpOUPrxFFKdqdhk4ZyeLZTjRu9hJYcY8N
+# Q/+W1PWy6dGnTr5S6y/tD9uwyxRAX0kYgMnBq1yCYoNbGcFIT3RTcpU/8N9++adk
+# 1PVUUW9yW2P66NC1kVO5yGnatRUFGAQMYuKozGwi5MtbueoCRftQXlq2m6KX66ys
+# f7h/8qxEn3GPlf6mN4QRkW4KW9sou8iypH3C+B3UNGKy9d16GZ8gYfqsPaCOT/wF
+# y6r2kpBRD9pl1Toavx6BHDRJQ6j3utVrz/BL0Md0TJ5IJNM9i5ICoYIDIDCCAxwG
 # CSqGSIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoT
 # DkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJT
 # QTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjAN
 # BglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZI
-# hvcNAQkFMQ8XDTIzMDcwODE5NTQzMVowLwYJKoZIhvcNAQkEMSIEIMuAHLE3ObZZ
-# hCUbzg1TqSCsF+LHbETDiTnyAfImR+GeMA0GCSqGSIb3DQEBAQUABIICAJqUX0nU
-# TXc+EHQdk/eMc9deXi7egyoNexcB3/OP/bRDeiQNs8beEGY0YVhSuYkyRv5NvDjY
-# uH6iLzyLCt3sSl8WijAwyeBfM5FtSEyVQHLfMSMzZYp/NewF1jjRLVSG9TjG4tFe
-# bvLJBGLCoCjFfg8xHTvpJKmZStjjwoWkUyjCZaPjNfmG2R0rHQ/SePF3K19DxYFM
-# j69c5csG5yrF4dQMZHcpW/XUKIMCx+elrVXH6t9UDjaMJeks+scS+2DLruU0DwA/
-# rZZ6BlP0MK5y5LMRwReRf/QOfYjqLv4UVMPursumNF6IRXTgqDPrCCXrNlBipRS3
-# IGPOwJYuPnjrpROayHDhfvCgH3YY8vO854Gc1H0vrzHJKf1eJg3NyYFNWRvroz9b
-# uCRpssTu1TtrmbyF/228yYe7ZzB4xKjzNdgVpDBFWEPIR1sNcUA65KbFPIDZTUk1
-# VVgnobXKUCZQt4ZyycC3HuNdwX/edDFMm7E4oz3xqYhud8G6pvqgt2PPe77aOYki
-# KuA/NBokYYM22Adzv2JnJ3p9Rh2p0c+wn+b5qWXB6ksURw5i1YRCPD8Xb5ZAEjg0
-# 9NYl8tO/z10bhiRlrWPEC/dUWaUbXGyfqgmssTHlYa/rvXg1LUE0lMy0fhVR0zdg
-# MPpxeHSfKK0zHBFBjkETi20OHzogn7wOEGxM
+# hvcNAQkFMQ8XDTIzMDcxMDA2MjI1MFowLwYJKoZIhvcNAQkEMSIEIFugAsat/b5H
+# sDTHkKdiEQu5hVJU85CnlcEvTbu397K6MA0GCSqGSIb3DQEBAQUABIICAAdUbbaY
+# TRcoEDw7EexHqGB9tiaqG63W0jYZFaJKBhRh5fJPv8iYIifDazcpe2bWbco5GOZJ
+# 24eR/SVFtVYija6BEo+JCUzoAu9kZ+MLllaraL23YiwmVw1+TJtRtlTj3F1qrgD5
+# q0YxftWKA5WM0rGisgyl1Pu2MtbdLVgof4Q8A9346Eo5KvebhdWvbKcN1qPWKhc6
+# 3EkphsDoatWXSLP7lhfzA7oxLokcbuTY4YlZU8lz9R9OUCWeOqLa/MMLsxfyoLs2
+# oQbGmdc/JEz/pk1BjFlvu903MCBtpk4m1FRz5M6PiuuYIHzPqLe4kX1Ik6+nBlx1
+# NdcTGSTqkIg2ja5EvKzJGx7ZBLLM5mgY90otO/ZOJzGe0KW206ft195le9LFRnd5
+# 36aYMe37PP6AjICoioBpDxyHAY5n/GVZmuqA6BViosy4hQaUdq4oqajP8vt0F1Pp
+# iZMKByrJIFyRChUQCdRcyv4HfJ2ngaFUCgGYjTbCHK4lxJeu6mtEj/f+dBCDwbkh
+# YwyZ0NzmEbK4TSj4EB3YEZbVZprHcZrZmMJ9wXBUh8ZpBwtO5bKHEW46rVJmrFh5
+# OeznhpgkqteDRgjvYBIEgx19cPfprJyXPZU2MIu/yxaomDQBJk9c3NMt5emQqklI
+# bzQ9GlsXLyoAJe9ioWsV29b0jSFb9tRFrW/N
 # SIG # End signature block
